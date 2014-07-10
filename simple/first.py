@@ -1,0 +1,2 @@
+def laugh():
+    print 'hahahahahahah'

@@ -41,6 +41,7 @@ import utils
 
 
 
+
 # create app
 app = Flask(__name__)
 app.config.from_object(config)
@@ -186,7 +187,8 @@ def register():
                     "VALUES (?,?,?,?,?,?)",
                     (username, p_hash, nickname, gender, created_at, request.remote_addr,))
                 g.db.commit()
-                result = g.db.execute('SELECT *  FROM accounts WHERE username=?', (username,)).fetchone()
+                result = g.db.execute('SELECT id,username,nickname  FROM accounts WHERE username=?',
+                                      (username,)).fetchone()
                 print 'register,result=', result
                 if result:
                     session['logged_in'] = True

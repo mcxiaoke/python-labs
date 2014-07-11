@@ -15,8 +15,10 @@ CREATE TABLE entries (
 DROP TABLE IF EXISTS accounts;
 CREATE TABLE accounts (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  name       TEXT NOT NULL,
+  username   TEXT NOT NULL,
   password   TEXT NOT NULL,
+  nickname   TEXT NOT NULL,
+  gender     TEXT,
   created_at DATE NOT NULL,
   created_ip TEXT NOT NULL
 )

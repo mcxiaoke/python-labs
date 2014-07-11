@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block body %}
+    <h2>Register</h2>
+    {% if error %}<p class="error"><strong>Error:</strong>{{ error }}</p>{% endif %}
+    <form action="{{ url_for('register') }}" method="post">
+        <dl>
+            <dt>Username:
+            <dd><input type="text" name="username" value="{{ username }}">
+            <dt>Nickname:
+            <dd><input type="text" name="nickname" value="{{ nickname }}">
+            <dt>Gender:
+            <dd><input type="text" name="gender" value="{{ gender }}">
+            <dt>Password:
+            <dd><input type="password" name="password1">
+            <dt>Password Again:
+            <dd><input type="password" name="password2">
+            <dd><input type="submit" value="Register">
+        </dl>
+    </form>
+{% endblock %}

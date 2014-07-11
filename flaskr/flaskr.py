@@ -8,7 +8,7 @@ from contextlib import closing
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
 
 import config
-
+import utils
 
 
 
@@ -100,8 +100,9 @@ def add_entry():
         abstract = title
         text = request.form['text']
         created_at = datetime.strftime(datetime.now(), app.config['DATE_FORMAT'])
-        g.db.execute("INSERT INTO entries (title,abstract,text,created_at,user_id) VALUES (?,?,?,?,?)",
-                     [title, abstract, text, created_at, user_id])
+        g.db.execute("INSERT INTO entries (title,abstract,text,created_at,user_id) "
+                     "VALUES (?,?,?,?,?)",
+                     (title, abstract, text, created_at, user_id,))
         g.db.commit()
         flash('New entry was successfully posted')
         return redirect(url_for('show_entries'))
@@ -114,16 +115,27 @@ def add_entry():
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] != app.config['USERNAME']:
-            error = 'invalid username'
-        elif request.form['password'] != app.config['PASSWORD']:
-            error = 'invalid password'
+        username = request.form['username']
+        password = request.form['password']
+        if not username:
+            error = 'empty username'
+        elif not password:
+            error = 'empty password'
         else:
-            session['logged_in'] = True
-            session['logged_user'] = request.form['username']
-            print request.form['username']
-            flash('You were logged in')
-            return redirect(url_for('show_entries'))
+            cur = g.db.execute("SELECT username,password FROM accounts WHERE username=?", (username,))
+            row = cur.fetchone()
+            if not row:
+                error = 'user not found'
+            else:
+                p_hash = row[1]
+                print 'login,username=', username, 'password=', password, 'hash=', p_hash
+                if utils.check_hash(username, app.config['SECRET_KEY'], password, p_hash):
+                    session['logged_in'] = True
+                    session['logged_user'] = request.form['username']
+                    flash('You were logged in')
+                    return redirect(url_for('show_entries'))
+                else:
+                    error = 'username and password not match'
     return render_template('login.html', error=error)
 
 
@@ -133,6 +145,58 @@ def logout():
     session.pop('logged_user', None)
     flash('You were logged out')
     return redirect(url_for('show_entries'))
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = None
+    username = ""
+    password1 = ""
+    password2 = ""
+    nickname = ""
+    gender = ""
+    if request.method == 'POST':
+        username = request.form['username']
+        password1 = request.form['password1']
+        password2 = request.form['password2']
+        nickname = request.form['nickname']
+        gender = request.form['gender']
+        if not username:
+            error = 'username is required'
+        elif not nickname:
+            error = 'nickname is required'
+        elif not gender:
+            error = 'gender is required'
+        elif not password1 or not password2:
+            error = 'password is required'
+        elif password1 != password2:
+            error = 'password is not match'
+        else:
+            cur = g.db.execute("SELECT username FROM accounts WHERE username=?", (username,))
+            row = cur.fetchone()
+            print row
+            if row and row[1]:
+                error = 'username is already exists'
+            else:
+                created_at = datetime.strftime(datetime.now(), app.config['DATE_FORMAT'])
+                p_hash = utils.make_hash(username, app.config['SECRET_KEY'], password2)
+                print 'register,username=', username, 'password=', password2, 'hash=', p_hash
+                g.db.execute(
+                    "INSERT INTO accounts (username,password,nickname,gender,created_at,created_ip) "
+                    "VALUES (?,?,?,?,?,?)",
+                    (username, p_hash, nickname, gender, created_at, request.remote_addr,))
+                g.db.commit()
+                result = g.db.execute('SELECT *  FROM accounts WHERE username=?', (username,)).fetchone()
+                print 'register,result=', result
+                if result:
+                    session['logged_in'] = True
+                    session['logged_user'] = request.form['username']
+                    flash('You were logged in')
+                    return redirect(url_for('show_entries'))
+                else:
+                    error = 'register failed'
+
+    return render_template('register.html', error=error, username=username, nickname=nickname, gender=gender)
 
 
 if __name__ == '__main__':

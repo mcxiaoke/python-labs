@@ -8,6 +8,7 @@
     <div class="metanav">
         <a href="{{ url_for('show_entries') }}">Home</a>
         {% if not session.logged_in or not session.logged_user %}
+            <a href="{{ url_for('register') }}">Register</a>
             <a href="{{ url_for('login') }}">LogIn</a>
         {% else %}
             <a href="{{ url_for('add_entry') }}">New</a>

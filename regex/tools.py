@@ -24,3 +24,7 @@ if __name__ == '__main__':
     else:
         print 'please set raw data file'
 
+        '''
+        数据分析办法，按UID开头数字或字母,1,2,3..,a,b,c...z分为不同的dict存储和处理
+        '''
+

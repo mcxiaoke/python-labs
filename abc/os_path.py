@@ -1,3 +1,7 @@
+#-*- coding: UTF-8 -*-
+__author__ = 'mcxiaoke'
+
+'''
 os.path用于处理文件路径，但它只是path模块的一个别名，对应的各个系统的具体实现是posixpath/ntpath/macpath等
 os.path.abspath(path) 获取对应路径的绝对路径，会对.和..这类相对路径展开，这个函数不检查路径是否真实存在
 os.path.basename(path) 返回路径最后的基本名字，如 /some/path/返回''，some/path/name返回'name'，这个函数也不检查路径是否真实存在，只是字符串处理
@@ -23,6 +27,8 @@ os.path.splitdrive(path) 分割路径为盘符和路径，如os.path.splitdrive(
 os.path.splitext(path) 分割路径为路径和扩展名，如os.path.splitext('C:\\Python\libs\hello.txt')返回('C:\\Python\\libs\\hello', '.txt')，而os.path.splitext('C:\\Python\libs\somedir')返回('C:\\Python\\libs\\somedir', '')
 os.path.splitunc(path) 这个不清楚做什么用的
 os.path.walk(path, visit, arg) 使用visit函数遍历路径，函数参数为(arg, dirname, names)，dirname表示当前正在处理的目录，names表示此目录下的文件，这个函数不跟随软链接，例子：
+'''
+
 import os
 
 def process(arg,dirname,names):
@@ -31,10 +37,10 @@ def process(arg,dirname,names):
     for file in names:
         file_path=os.path.join(dirname,file)
         print "processing file:%s" %file_path
-        
+
 os.path.walk('libs',process,())
 
-os.path.supports_unicode_filenames 一个属性，返回操作系统是否 支持Unicode文件名
+# os.path.supports_unicode_filenames 一个属性，返回操作系统是否 支持Unicode文件名
 
 
 

@@ -31,6 +31,9 @@ print "hello, world {0} {1} !".format('first', 'second')
 
 # 字符串格式 %s
 print "Welcome to %s" % "China"
+# 命名参数
+print 'I love %(cat)s and %(dog)s.' % {'cat': 'BadCat', 'dog': 'BadDog'}
+# out:I love BadCat and BadDog.
 
 # 整数格式
 '''
@@ -129,6 +132,8 @@ s2 = 'this\tis\tsome\tsample\ttext'
 # 展开TAB
 print s2.expandtabs(4)  # this    is  some    sample  text
 s3 = '     hello,     python!    '
+# 检查结尾
+print s.endswith('hello')  # out:False
 # 去除前后空白
 print s3.strip()  # hello,     python!
 s4 = 'THIS is SOME text.'
@@ -136,15 +141,26 @@ s4 = 'THIS is SOME text.'
 print s4.swapcase()  # this IS some TEXT.
 # 首字母大写
 print s4.capitalize()  # This is some text.
+# 标题模式，单词首字母大写
+print 'title:', s4.title()  # This Is Some Text.
 # 全部小写
 print s4.lower()  # this is some text.
 # 全部大写
 print s4.upper()  # THIS IS SOME TEXT.
+# 全是字母和数字
+print '12345678abcdefg'.isalnum()  # out:True
+# 全是数字
+print '12345'.isdigit()  # out:True
+# 全是字母
+print '12345, hello'.isalpha()  # out:False
+# 删除指定字符
+print 'hello,world,I love cats'.translate(None, 'o')  # out:hell,wrld,I lve cats
 # 补齐字符串
 print s4.ljust(30, '_')  # THIS is SOME text.____________
 print s4.rjust(30, '_')  # ____________THIS is SOME text.
 print s4.center(30, '_')  # ______THIS is SOME text.______
 print s4.zfill(30)  # 000000000000THIS is SOME text.
+
 # 替换字符串
 s5 = 'color1 and color2 and color3 scheme files are tested.'
 print s5.replace('color', 'dark')

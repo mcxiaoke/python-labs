@@ -17,8 +17,8 @@ print sys.getsizeof(int(123))
 print sys.getsizeof(float(123))  # 24
 print sys.getsizeof('s')  # 38
 print sys.getsizeof(u'u')  # 52
-sys.path  # 返回搜索路径
-sys.modules  # 返回当前载入的模块列表
+print sys.path  # 返回搜索路径
+print sys.modules  # 返回当前载入的模块列表
 print sys.platform  # 返回操作系统标识
 print sys.prefix  # 返回python安装路径
 # out: /usr/local/Cellar/python/2.7.8_1/Frameworks/Python.framework/Versions/2.7'
@@ -27,3 +27,8 @@ print sys.version  # 安装的python版本信息
 # [GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.51)]
 print sys.version_info  # python版本信息
 # out: sys.version_info(major=2, minor=7, micro=8, releaselevel='final', serial=0)
+
+# Python默认编码
+print sys.getdefaultencoding()  # out:ascii
+# 文件系统默认编码
+print sys.getfilesystemencoding()  # out:utf-8

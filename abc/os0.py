@@ -123,4 +123,39 @@ for root, dirs, files in os.walk(top, topdown=False):
         os.rmdir(os.path.join(root, name))
 '''
 
-# TODO 15.1.5. Process Management
+# 15.1.5. Process Management
+os.execv('/bin/ls', ['-a', '-l'])  # 需要使用绝对路径
+# 发送SIGABRT信号给当前进程，调用这个函数不会触发Python的SIGABRT信号处理器
+os.abort()
+'''
+# 这系列函数都是执行外部程序，加载进当前进程，
+# 在Unix上，这个函数替换当前进程，不会改变进程PID
+# 当前进程会被立即替换，打开的文件和描述符缓存不会刷新和回写
+# 带p的函数会使用PATH环境变量加载外部可执行文件
+os.execl(path, arg0, arg1, ...)
+os.execle(path, arg0, arg1, ..., env)
+os.execlp(file, arg0, arg1, ...)
+os.execlpe(file, arg0, arg1, ..., env)
+os.execv(path, args)
+os.execve(path, args, env)
+os.execvp(file, args)
+os.execvpe(file, args, env)
+'''
+# os.fork() 创建一个子进程，在child进程中返回0，在parent进程中返回子进程的PID
+# os.kill(pid,sig) # 发送信号给指定进程
+# os.killpg(pgid, sig) # 发送信号给指定进程组
+print os.system("ls -a")  # 等同于调用C语言的system()
+os.times()  # 返回一个代表时间的五元组，分别是
+# user time,
+# system time,
+# children’s user time,
+# children’s system time,
+# and elapsed real time since a fixed point in the past
+# out: (0.19, 0.04, 0.0, 0.0, 1435990863.13)
+
+# os.wait() # 等待子进程结束
+# os.waitpid(pid, options) # 等待进程结束
+# 几个实用变量，更多功能可用path模块
+# os.curdir, os.pardir, os.sep, os.altsep
+# os.extsep, os.pathsep, os.linesep, os.devnull
+os.urandom(10)  # 返回一个N字节的随机字符串，一般用于加密

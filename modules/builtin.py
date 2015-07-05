@@ -50,3 +50,21 @@ print bool('world')  # out:True
 
 print '内置类型'.decode('utf-8')
 print u'内置类型'.encode('utf-8')
+
+# 内存视图
+# 不会复制数据，不能修改大小
+m = memoryview('hello,world')
+print m.readonly  # True
+b = bytearray('some text')
+m = memoryview(b)
+# 数据长度
+print len(m)  # out:9
+# 修改字节
+m[0] = 'S'
+# 内部格式# 转换为字符串
+print m.tobytes()  # out:Some text
+# 转换为序列
+print m.tolist()  # out:[83, 111, 109, 101, 32, 116, 101, 120, 116]
+
+# 函数和方法
+# 两种类型的函数：内置函数和用户定义的函数，两者有相同的操作，但内部实现是不同的

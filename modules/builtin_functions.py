@@ -65,13 +65,23 @@ print chr(34), chr(54), chr(94)  # " 6 ^
 # 返回一个类方法
 # classmethod(func)
 # @classmethod 函数装饰器
+# 返回一个静态方法
+# staticmethod(function)
+# @staticmethod
 '''
 class C(object):
     @classmethod
-    def f(cls, arg):
-        print cls.__name__, arg
-C.f('hello')  # C hello
-C().f('hello')  # C hello
+    def c_method(cls, arg):
+        print 'class method:', cls.__name__, arg
+
+    @staticmethod
+    def s_method(arg1, arg2):
+        print 'static method:', arg1, arg2
+
+C.c_method('hello')  # class method: C hello
+C().c_method('hello')  # class method: C hello
+C.s_method('cat', 'dog')  # static method: cat dog
+C().s_method('cat', 'dog')  # static method: cat dog
 '''
 
 # 比较大小
@@ -292,7 +302,7 @@ AA().hello() # {'x': 100, 'self': <__main__.AA object at 0x1072ff610>, 'cat': 'l
 
 # 应用函数到序列
 # map(function, iterable, ...) 返回结果是一个list
-print map(lambda x: x ** 3, [1, 2, 3, 4])  # out:[1, 8, 27, 64]
+print map(lambda k: k ** 3, [1, 2, 3, 4])  # out:[1, 8, 27, 64]
 print map(str.upper, ['hello', 'world', 'value'])  # out:['HELLO', 'WORLD', 'VALUE']
 
 # 最大值和最小值
@@ -342,5 +352,144 @@ print chr(97), chr(65), chr(56)  # out:a A 8
 # f = open('hello.txt', 'w+')
 print([1, 2, 3, 4, 5])  # out:[1, 2, 3, 4, 5]
 
-# 读取属性
+# 属性
 # property([fget[, fset[, fdel[, doc]]]])
+
+# 范围 Range
+# range(stop)
+# range(start, stop[, step])
+# 创建一个list，step默认等于1
+print range(10)  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+print range(1, 11)  # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+print range(0, 25, 3)  # [0, 3, 6, 9, 12, 15, 18, 21, 24]
+print range(0, -10, -2)  # [0, -2, -4, -6, -8]
+print range(0)  # []
+
+# 输入
+# raw_input([prompt]) 默认写入到标准输出，从标准输入读入，读入为字符串
+# s = raw_input('输入一个字符串: ')  # hello,world
+# print s  # hello,world
+
+# 合并
+# 针对一个迭代系列，取两个参数应用函数function
+# reduce(function, iterable[, initializer])
+# 举例：reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+# 计算：((((1+2)+3)+4)+5)
+# reduce的实现
+'''
+def reduce(function, iterable, initializer=None):
+    it = iter(iterable)
+    if initializer is None:
+        try:
+            initializer = next(it)
+        except StopIteration:
+            raise TypeError('reduce() of empty sequence with no initial value')
+    accum_value = initializer
+    for x in it:
+        accum_value = function(accum_value, x)
+    return accum_value
+'''
+print reduce(lambda x, y: x * y, [1, 2, 3, 4, 5])
+
+# 重新加载一个模块
+# reload(module)
+# 模块的代码会重新编译，顶层代码会再次执行，但是init函数不会调用第二次
+
+# 返回一个对象的可读字符串表示
+# repr(object) 可以使用__repr__() 修改，返回的字符串等价于传递给eval函数的字符串
+
+# 反转一个序列
+# reversed(seq) 返回一个迭代器
+print list(reversed([1, 2, 3, 4, 5]))  # [5, 4, 3, 2, 1]
+
+# 浮点数近似值
+# round(number[, ndigits])，默认不保留小数位
+print round(3.1415926, 2)  # 3.14
+print round(223.5678, 2)  # 223.57
+print round(12.7893)  # 13.0
+
+# 创建一个集合
+# set([iterable]) 通过序列或可迭代对象创建一个set
+l = [1, 1, 2, 4, 4, 55, 6, 6]
+print l  # [1, 1, 2, 4, 4, 55, 6, 6]
+print set(l)  # set([1, 2, 4, 6, 55])
+
+# 序列切片
+# slice(stop)
+# slice(start, stop[, step])
+# start 和 step 默认是 None
+# 返回一个slice对象，范围是range(start, stop, step)
+s = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+print slice(3)  # slice(None, 3, None)
+print slice(1, 3, 2)  # slice(1, 3, 2)
+print s[slice(3)]  # [1, 2, 3] =s[:3]
+print s[slice(1, 8, 2)]  # [2, 4, 6, 8] =s[1:8:2]
+
+# 序列排序
+# 返回一个排序后的列表
+# sorted(iterable[, cmp[, key[, reverse]]])
+print sorted([1, 3, -100, 44, 57, 545345, 44, 89])
+# out:[-100, 1, 3, 44, 44, 57, 89, 545345]
+
+# 返回一个对象友好可读的字符串表示
+# str(object='') 返回结果可能对eval()不合法
+
+# 序列和
+# sum(iterable[, start])
+# print sum([1,2,3,4,5]) # out:15
+# print sum(['hello','world','12345','cat'])
+# TypeError: unsupported operand type(s) for +: 'int' and 'str'
+
+# super函数
+# super(type[, object-or-type])
+# 用法一，单继承场景，在子类中访问父类，类似于Java中的super
+# 用法二，多继承场景
+'''
+class C(B):
+    def method(self, arg):
+        super(C, self).method(arg)
+'''
+
+# 创建元组
+# 序列对象包括：str, unicode, list, tuple, bytearray, buffer, xrange
+# tuple([iterable]) 从可迭代序列创建元组
+print tuple('hello')  # ('h', 'e', 'l', 'l', 'o')
+print tuple(range(5))  # (0, 1, 2, 3, 4)
+print tuple([1, 3, 5])  # (1, 3, 5)
+
+# 对象类型
+# type(object) # 返回对象的type
+# type(name, bases, dict) # 创建一个新的type对象
+
+# Unicode字符
+print unichr(0x2764)  # out: ❤
+print unichr(0x0038)  # out:8
+
+# Unicode对象
+# unicode(object='')
+# unicode(object[, encoding[, errors]])
+print unicode('hello')  # Out: u'hello'
+u = unicode('哈哈', 'gbk')  # Out: u'\u935d\u581d\u6431'
+u.encode('gbk')  # out:'\xe5\x93\x88\xe5\x93\x88'
+print u.encode('gbk')  # out:哈哈
+
+# 获取 __dict__ 属性
+# vars([object])
+# print vars()
+
+# 生成xrange对象
+# xrange(stop)
+# xrange(start, stop[, step])
+print list(xrange(10))  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# 打包函数
+# zip([iterable, ...]) 返回元组列表
+x = [1, 2, 3, 4]
+y = ['one', 'two', 'three', 'four']
+zipped = zip(x, y)
+print zipped  # [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
+x2, y2 = zip(*zipped)
+print x2  # (1, 2, 3, 4)
+print y2  # ('one', 'two', 'three', 'four')
+print x == list(x2), y == list(y2)  # True True
+

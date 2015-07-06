@@ -270,12 +270,64 @@ argparse.RawTextHelpFormatter #不过滤空白字符，包括参数的描述
 argparse.ArgumentDefaultsHelpFormatter # 会给每个参数添加默认的描述信息
 '''
 
-#prefix_chars
+# prefix_chars
 # 自定义参数前缀
+'''
 parser = argparse.ArgumentParser(prog='hello',prefix_chars='-+_')
 parser.add_argument('+m')
 parser.add_argument('-n')
 parser.add_argument('_p')
 print parser.parse_args('+m X -n Y _p Z'.split()) #Namespace(m='X', n='Y', p='Z')
+'''
 
-#TODO 15.4.2.8. fromfile_prefix_chars
+# fromfile_prefix_chars
+# 从文件读取参数列表配置，一行一个参数
+
+# argument_default
+'''
+parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+parser.add_argument('--target')
+parser.add_argument('type', nargs='?')
+print parser.parse_args(['--target', '1', 'TYPE'])  # Namespace(target='1', type='TYPE')
+print parser.parse_args()  # Namespace()
+'''
+
+# add_argument()参数解释
+# ArgumentParser.add_argument(
+# name or flags...[, # 参数字符串或名字，如'-v','--verbose','type'
+# action][, # 发现匹配参数时对应的基本动作(action)
+# nargs][, # 需要处理的命名行参数数量
+# const][, #  某些action和nargs需要定义的常量
+# default][, # 缺少参数时的产生的默认值
+# type][, # 参数应该被转换成此类型
+# choices][, # 参数的取值列表
+# required][, # 可选/必选参数
+# help][, # 参数的说明文字
+# metavar][, # 使用描述中的参数名字
+# dest]) # 添加到 parse_args()返回值中的属性名
+
+# action的取值：
+# 'store' 默认值，只是保存参数的值
+# 'store_const' 保存const关键字对应的值
+# 'store_true'/'store_false' 出现对应参数则值为True或False
+# 'append' 保存为列表，一个参数可出现多次
+# 'append_const' 保存为一个列表，const参数指定类型为int或str
+# 'count' 计算一个参数出现的次数，如-vvv --> #Namespace(verbose=3)
+# 'help' 打印完整的帮助信息，自动添加这个动作
+# 'version' 打印版本信息并退出
+'''
+parser = argparse.ArgumentParser(prog='hello')
+parser.add_argument('--verbose', '-v', action='count')
+print parser.parse_args('-vvv'.split())  # Namespace(verbose=3)
+parser.add_argument('--version', action='version', version='%(prog)s 2.0.0 x86-64')
+print parser.parse_args(['--version'])  # hello 2.0.0 x86-64
+'''
+
+# nargs 单个动作可关联多个参数
+parser = argparse.ArgumentParser(prog='hello')
+parser.add_argument('--foo', nargs=2)
+parser.add_argument('bar', nargs=1)
+print parser.parse_args('c --foo a b'.split())
+# out: Namespace(bar=['c'], foo=['a', 'b'])
+
+# --> 15.4.3.3. nargs

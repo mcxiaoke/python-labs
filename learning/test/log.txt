@@ -1,9 +1,0 @@
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y
-INFO:root:calculate square of x, y

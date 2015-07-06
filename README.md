@@ -1,1 +1,1 @@
-Learning Notes for Python.
+Some notes for learning Python.

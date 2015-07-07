@@ -24,22 +24,26 @@ if not path.exists(output_dir):
     os.mkdir(output_dir)
 print 'start dir is %s' % start_dir
 print 'output dir is %s' % output_dir
-
 tasks = []
+log = open('log.txt', 'w+')
 
 
 def handler(arg, dirname, names):
     dir_path = path.join(dirname, dirname)
-    print ("current dir is %s" % dir_path)
+    print ("processing diretory: %s" % dir_path)
     for file in names:
         file_path = path.abspath(path.join(dirname, file))
         print "processing file: %s" % file
         # print 'path is file: ', path.isfile(file_path)
         if not path.isfile(file_path):
+            print 'ignore diretory:' + file_path
             continue
         _, ext = path.splitext(file)
         file_st = os.stat(file_path)
-        fm = datetime.fromtimestamp(file_st.st_mtime)
+        t = file_st.st_ctime
+        if file_st.st_mtime < t:
+            t = file_st.st_mtime
+        fm = datetime.fromtimestamp(file_st.st_ctime)
         print 'file modified time is', fm.strftime("%Y-%m-%d %H:%M:%S"), fm.microsecond
         src_name = file
         dest_name = fm.strftime(FILE_NAME_FORMAT) + ext
@@ -52,7 +56,8 @@ def handler(arg, dirname, names):
         print 'src is %s' % src_path
         print 'dest is %s' % dest_path
         tasks.append((src_path, dest_path))
-    return 0
+        log.write('prepare src: ' + src_path + '\n')
+    log.write('\n')
 
 
 os.path.walk(start_dir, handler, ())
@@ -60,10 +65,15 @@ if tasks:
     for src, dest in tasks:
         if not path.exists(src):
             print "%s not exists." % src
+            log.write('ignore not exists: %s\n' % src)
         elif not path.isfile(src):
             print "%s is not file." % src
+            log.write('ignore non-file: %s\n' % src)
         elif path.exists(dest):
             print "%s already exists." % dest
+            log.write('ignore exists dst: %s\n' % dest)
         else:
             os.rename(src, dest)
+            log.write('move file: ' + src + '\n')
             print 'move %s to %s' % (src, dest)
+log.close()

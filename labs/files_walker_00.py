@@ -7,7 +7,7 @@ from os import path
 
 py_files = []
 
-start_dir = '..'
+start_dir = '.'
 
 
 def handler(arg, dirname, names):
@@ -41,9 +41,10 @@ if py_files:
         # 目标文件名保持一致
         dest = path.join(target_dir, path.basename(src))
         if path.exists(src) and not path.exists(dest):
+            pass
             # 如果源文件存在，且目标文件不存在则复制
-            open(dest, 'wb').write(open(src, 'rb').read())
-            print 'file copied to %s' % dest
+            # open(dest, 'wb').write(open(src, 'rb').read())
+            # print 'file copied to %s' % dest
         else:
             # 如果已存在，直接忽略
             print 'ignore exists file: %s' % dest

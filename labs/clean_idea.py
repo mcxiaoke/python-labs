@@ -14,7 +14,8 @@ import time
 '''
     clean idea project files
     param: max_depth -> max depth for recursively, default=3
-    param: permanently -> move to system tmp dir or permanently delete, default=False
+    param: permanently -> move to system tmp dir or permanently delete,
+    default=False
 '''
 
 
@@ -36,15 +37,17 @@ def clean(start_dir, max_depth=3, permanently=False):
                 # os.renames()
                 file = path.join(root, name)
                 deleted.append(file)
-                if permanently:
-                    if path.isfile(file):
-                        os.remove(file)
+                try:
+                    if permanently:
+                        if path.isfile(file):
+                            os.remove(file)
+                        else:
+                            shutil.rmtree(file)
                     else:
-                        shutil.rmtree(file)
-                else:
-                    shutil.move(file, backup_dir)
-
-                print("delete %s" % file)
+                        shutil.move(file, path.join(backup_dir, name))
+                    print("delete %s" % file)
+                except shutil.Error, e:
+                    print('delete error: %s' % e)
     if deleted:
         print('cleaned in %s' % start)
         print('backup to %s' % backup_dir)

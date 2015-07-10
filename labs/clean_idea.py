@@ -58,6 +58,5 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(usage)
         sys.exit(1)
-    start = '.'
-    start = path.abspath(start)
+    start = path.abspath(sys.argv[1])
     clean(start)

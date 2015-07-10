@@ -12,7 +12,7 @@ import os
 print os.name  # 返回os模块对应的实际模块名字
 # out: 'posix', 'nt', 'os2', 'ce', 'java', 'riscos'
 # print os.environ #返回系统的所有环境变量
-os.environ['TMPDIR']
+os.environ['TMP']
 # out: '/var/folders/53/n994f2492dz6zx4f6x812xvh0000gp/T/'
 # 可以使用 putenv() unsetenv() 修改环境变量
 

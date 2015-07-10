@@ -17,6 +17,9 @@ print sys.stdin.encoding
 print sys.stdout.encoding
 print sys.stderr.encoding
 
+if len(sys.argv)<2:
+    sys.exit(1)
+
 # 如果这里不提前转换为unicode
 # 在Sublime的console里无法显示中文文件名
 root=unicode(path.abspath(sys.argv[1]))

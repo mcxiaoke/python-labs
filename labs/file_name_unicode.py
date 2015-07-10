@@ -21,9 +21,11 @@ print sys.stderr.encoding
 
 
 if len(sys.argv) < 2:
-    sys.exit(1)
+    root = os.path.expanduser('~/Downloads/')
+else:
+    root = sys.argv[1]
 
-# 如果这里不提前转换为unicode
-# 在Sublime的console里无法显示中文文件名
-root = unicode(path.abspath(sys.argv[1]))
+# Windows下，如果这里不提前转换为unicode
+# 在sublime的console里无法显示中文文件名
+# root = unicode(root)
 os.path.walk(root, handler, ())

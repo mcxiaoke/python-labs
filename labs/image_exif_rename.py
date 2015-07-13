@@ -5,6 +5,7 @@
 
 import os
 import sys
+import codecs
 import exifread
 from os import path
 from datetime import datetime
@@ -50,7 +51,7 @@ NAME_TAGS = [
 ]
 
 EXIF_DATE_TIME = '%Y:%m:%d %H:%M:%S'
-NAME_DATE_TIME = '%Y%m%d_%H%M%S'
+NAME_DATE_TIME = 'IMG_%Y%m%d_%H%M%S'
 
 
 class ImageInfo(object):
@@ -74,26 +75,22 @@ if len(sys.argv) < 2:
     print 'Usage: python %s some_directory' % sys.argv[0]
     sys.exit(1)
 
-top = path.normcase(sys.argv[1])
-log = open(path.join(top, 'log.txt'), 'w')
+top = unicode(path.normcase(sys.argv[1]))
+log = codecs.open(path.join(top, 'log.txt'), 'w', 'utf-8')
 for root, dirs, files in os.walk(top):
     for name in files:
         _, ext = path.splitext(name)
         if not ext or ext.lower() not in ['.jpg', '.png']:
             continue
-        src_path = path.abspath(path.join(root, name))
+        rel_path = path.join(root, name)
+        src_path = path.abspath(rel_path)
         print "process file:", src_path
         f = open(path.join(root, name), 'rb')
         tags = exifread.process_file(f)
         f.close()
-        log.write("File: %s\n" % path.basename(name))
         if not tags:
-            continue
-        for tag in NAME_TAGS:
-            if tag in tags:
-                # print '%s=%s,' % (tag.split()[1], tags[tag])
-                log.write('\t%s=%s\n' % (tag.split()[1], tags[tag]))
-        log.flush()
+            log.write('No exif tags found for: %s\n' % rel_path)
+        '''
         img_path = src_path
         width_str = str(tags.get('EXIF ExifImageWidth'))
         height_str = str(tags.get('EXIF ExifImageLength'))
@@ -108,6 +105,22 @@ for root, dirs, files in os.walk(top):
         img_model = str(tags.get('Image Model'))
         img = ImageInfo(img_path, img_w, img_h, time=img_time,
                         iso=img_iso, model=img_model)
-        print img
+        '''
+        time_str = str(tags.get('Image DateTime')) if tags else None
+        img_time = datetime.strptime(
+            time_str, EXIF_DATE_TIME) if time_str else None
+        if not img_time:
+            os.stat(src_path)
+            img_time = datetime.fromtimestamp(os.stat(src_path).st_mtime)
+            print 'no exif, using last modified time for %s' % name
+            log.write('using stat modify time for %s\n' % name)
+        dst_path = path.join(
+            root, datetime.strftime(img_time, NAME_DATE_TIME)+ext.lower())
+        if path.exists(dst_path):
+            print 'dst file exists, no need to rename, skip %s' % name
+            continue
+        os.rename(src_path, dst_path)
+        print 'renamed to', dst_path
+        log.flush()
 
 log.close()

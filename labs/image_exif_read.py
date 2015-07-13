@@ -44,10 +44,9 @@ log = open(path.join(top, 'log.txt'), 'w')
 for root, dirs, files in os.walk(top):
     for name in files:
         _, ext = path.splitext(name)
-        print ext
         if not ext or ext.lower() not in ['.jpg', '.png']:
             continue
-        print "process file: ", path.abspath(name)
+        print "process file: ", path.abspath(path.join(root,name))
         f = open(path.join(root, name), 'rb')
         tags = exifread.process_file(f)
         f.close()

@@ -112,5 +112,64 @@ print urllib.url2pathname('///C:///Users/python/Documents')
 
 # URLopener对象
 # class urllib.URLopener([proxies[, context[, **x509]]])
+'''
+用于打开URL并读取数据的基类，除非你要支持http/ftp/file以外的协议，一般情况都应该使用FancyURLopener。
+默认情况下，URLopener发送urllib/version这样的User-Agent，应用可以在URLopener的子类中修改version属性来改变它。
+可选的proxies参数是一个代理和域名关系的映射，一个空字典表示完全不使用代理，默认是None，表示使用系统代理。
 
-# TODO 20.5.3. URL Opener objects
+context参数必须是一个ssl.SSLContext对象，可以使用它提供一些SSL配置参数，用于HTTPS连接。
+
+其它的参数都放在x509中，可被用于HTTPS的客户端认证，key_file和cert_file用于提供SSL的key和certificate。
+
+open(fullurl[, data])
+使用合适的协议打开完整的URL，可以指定缓存和代理信息，data参数的含义同urlopen()
+open_unknown(fullurl[, data])
+用户可以在子类中定义未知类型URL的打开方式
+retrieve(url[, filename[, reporthook[, data]]])
+抓取URL的数据并存入文件中，如果URL是远程地址并且没有提供filename，会生成一个临时文件名。
+
+'''
+
+# class urllib.FancyURLopener(...)
+'''
+FancyURLopener是URLopener的之类，提供HTTP协议的一些默认处理。对于30x的状态码，可以从Location中获取到真实URL；对于401状态码，使用默认的Basic认证。对于其它的状态码，方法http_error_default()会被调用，你可以在子类中重写这个方法提供合适的错误处理。
+注意：按照RFC2616的规定，如果POST请求遇到301和302，不能未经用户确认就自动重定向。
+构造函数的参数和URLopener相同。
+提示：当进行Basic认证时，prompt_user_passwd()方法会被调用，默认实现是让用户在可控的终端中输入需要的信息。可以在子类中提供更合适的行为。
+'''
+
+# urllib的限制
+'''
+1. 目前只支持HTTP/FTP/FILE三种协议
+2. urlretrieve不支持缓存
+3. 不支持查询一个特定的URL是否在缓存中
+4. 如果指向本地文件的URL无法打开，会尝试用FTP协议重试
+5. 等待网络连接建立的时候，urlopen()和urlretrieve()可能会导致不确定的长时间延迟，使用这些函数不适合用来构建交互式的Web客户端
+6. urlopen()和urlretrieve()返回的服务端返回的原始数据，可能是二进制数据、文本数据或者HTML，HTTP协议在Content-Type中提供了类型信息，如果是HTML，可以使用htmllib解析
+7. 处理FTP协议时存在不少问题，建议使用ftplib或者继承FancyURLopener自己处理
+8. 不支持需要认证的代理
+9. 操作URL字符串建议使用urlparse
+'''
+
+# 简单的示例
+
+# HTTP GET
+params = urllib.urlencode(
+    {"key1": 123, "value": "98%", "verion": "1.0.1-beta"})
+# out: verion=1.0.1-beta&key1=123&value=98%25
+f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s" % params)
+# print f.read()
+
+# HTTP POST
+f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s", params)
+print f.getcode(), '\n', f.info()
+'''
+output:
+400
+Server: nginx
+Date: Fri, 17 Jul 2015 00:26:51 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 71
+Connection: close
+Expires: -1
+'''

@@ -173,3 +173,90 @@ Content-Length: 71
 Connection: close
 Expires: -1
 '''
+
+
+import urllib2
+
+# 提示：urllib2模块在Python3中变成了urllib.request和urllib.error
+# urllib2定义了一些类和函数用于打开URL，主要是用于HTTP，包括Basic和Digest认证、重定向、Cookie等。
+# 建议使用requests包处理HTTP连接
+
+## 函数
+
+# urllib2.urlopen(url[, data[, timeout[, cafile[, capath[, cadefault[, context]]]]])
+'''
+url - 打开一个URL，url可以是一个字符串，也可以是一个Request对象。
+data - data默认是None，用于指定发送给服务器的额外数据，如果提供了data参数，就是POST请求，否则是GET请求。data的格式必须是application/x-www-form-urlencoded。urllib.urlencode()函数可以将一个字典或者元组列表编码为这种格式。urllib2发送HTTP/1.1请求时默认带Connection:close头部。
+timeout - 可选参数，用于指定建立连接的超时时间，如果没有指定，会使用系统默认的超时，仅适用于HTTP/HTTPS/FTP。
+context - 一个ssl.SSLContext对象，提供SSL相关的配置。
+cafile/capath - 为HTTPS请求指定可信的CA证书集合，前者指向一个证书文件，后者指向一个证书文件目录。
+cadefault - 无用，直接忽略。
+
+这个函数返回一个类似于file的对象，包含额外的三个方法：geturl()/info()/getcode()，含义同urllib.open()中的定义一样。如果遇到错误会抛出URLError异常。如果没有合适的处理器，可能会返回None，你可以使用UnkownHandler处理这种情况。此外，这个函数默认会检测系统的代理相关的环境变量。
+'''
+
+# urllib2.install_opener(opener)
+# 安装一个OpenerDirector实例作为默认的全局opener，只有当你希望urlopen()使用这个opener时才安装它，否则，直接使用OpenerDirector.open()代替urlopen()即可。
+
+# urllib2.build_opener([handler, ...])
+# 返回一个OpenerDirector实例，使用参数提供的handler列表链式处理，handler可以是BaseHandler或者它的子类的实例，下面是几个默认添加，在最前面的handler：UnknownHandler、HTTPHandler、HTTPDefaultErrorHandler、HTTPRedirectHandler、FTPHandler、FileHandler、HTTPErrorProcessor。如果支持HTTPS，HTTPSHandler也会被添加。
+
+# urllib2.URLError # handlers处理请求时抛出的异常，是IOError的子类
+# urllib2.HTTPError  # 可以像file对象一样用，用于处理HTTP错误，包含code和reason两个属性
+
+
+# Request对象
+# class urllib2.Request(url[, data][, headers][, origin_req_host][, unverifiable])
+'''
+此类是对URL请求的一个抽象
+url - url参数应该是一个合法的URL的字符串表示
+data - data用于指定POST参数
+headers - headers是一个字典，指定HTTP Headers，可用于提供User-Agent等信息
+origin_reg_host/unverifiable - 用于处理第三方cookie，具体可以参考RFC2965
+'''
+
+### Request的接口，都可以被子类覆盖
+'''
+Request.add_data(data) # 添加data数据，格式是字符串，仅用于HTTP，会导致请求从GET变为POST
+Request.get_method()  # 返回一个表示HTTP METHOD的字符串，例如'GET' 'POST'
+Request.has_data() # 返回这个Request是否有data
+Request.get_data() # 返回这个Request的data
+Request.add_header(key, val) # 添加一个Header，每个名字的Header只能有一个，后面的会覆盖前面的
+Request.add_unredirected_header(key, header) # 添加不会在重定向中使用的Header
+Request.has_header(header)  # 检查Request中是否存在这个名字的Header
+Request.get_full_url()  # 返回构造函数中提供的完整URL
+Request.get_type()  # 返回URL的类型，就是对应的协议，例如http/ftp/file
+Request.get_host()  # 返回请求的HOST
+Request.get_selector()  # the part of the URL that is sent to the server
+Request.get_header(header_name, default=None)  # 返回某个Header的值
+Request.header_items()  # 返回Header的元组列表
+Request.set_proxy(host, type)  # 设置代理
+Request.get_origin_req_host()  # 参见RFC2965
+Request.is_unverifiable()  # 参见RFC2965
+'''
+
+# OpenerDirector对象
+'''
+# OpenerDirector.add_handler(handler)
+handler应该是BaseHandler或其子类的实例，会搜索下面的方法，并添加到处理请求的链式调用中：
+protocol_open — 指示这个handle知道怎么打开这个协议的URL
+http_error_type — 指示这个handler知道怎么处理HTTP错误码类型的HTTP错误
+protocol_error — 指示这个handler知道怎么处理这个协议的错误(非HTTP协议)
+protocol_request — 指示这个handler知道怎么预处理这个协议的请求
+protocol_response — 指示这个handler知道怎么后处理这个协议的响应
+
+# OpenerDirector.open(url[, data][, timeout])
+打开指定的url，url可以是字符串或者Request对象，可以传递可选的data参数，返回值和异常与urlopen()相同，可以选的timeout参数用于指定超时时间
+
+# OpenerDirector.error(proto[, arg[, ...]])
+处理指定协议的错误，这个方法会调用已注册的错误处理器，HTTP协议使用状态码检测错误处理器，参考hanler类的http_error_*()方法
+
+OpenerDirector分散步打开一个URL：
+(protocol是具体的协议名字的代号，实际可能是http/ftp/file等)
+1. 所有包含protocol_request方法的handler会被调用，用来预处理这个请求
+2. 包含protocol_open方法的handler会被调用，用来处理这个请求，如果任何一个handler返回了一个非None的值，或者抛出了一个异常，那么这一步就完成了。事实上，上面的逻辑首先会尝试default_open()，如果不存在这个方法，才会重复调用protocol_open方法，如果所有的方法都不存在，会重复调用unknown_open()方法。注意：这些实现可以调用OpenerDirector的open()和error()方法。
+3. 所有包含protocol_response方法的handler会被调用，用来后处理请求的响应数据。
+'''
+
+# BaseHandler对象
+# TODO 20.6.3

@@ -157,12 +157,12 @@ FancyURLopener是URLopener的之类，提供HTTP协议的一些默认处理。�
 params = urllib.urlencode(
     {"key1": 123, "value": "98%", "verion": "1.0.1-beta"})
 # out: verion=1.0.1-beta&key1=123&value=98%25
-f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s" % params)
+#f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s" % params)
 # print f.read()
 
 # HTTP POST
-f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s", params)
-print f.getcode(), '\n', f.info()
+#f = urllib.urlopen("https://api.douban.com/v2/user/1000001?%s", params)
+#print f.getcode(), '\n', f.info()
 '''
 output:
 400
@@ -258,5 +258,14 @@ OpenerDirector分散步打开一个URL：
 3. 所有包含protocol_response方法的handler会被调用，用来后处理请求的响应数据。
 '''
 
-# BaseHandler对象
-# TODO 20.6.3
+# 例子
+#f=urllib2.urlopen("http://m.douban.com")
+#print f.code
+#print f.info()
+#print f.read(128)
+
+import httplib
+conn = httplib.HTTPSConnection("www.douban.com")
+conn.request("GET", "/")
+r1 = conn.getresponse()
+print r1.status,r1.reason

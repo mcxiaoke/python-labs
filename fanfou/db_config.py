@@ -4,16 +4,39 @@
 # @Date:   2015-08-05 21:04:24
 DB_NAME = "fanfou.db"
 
+KV_TABLE = "kv"
+LOG_TABLE = "log"
 USER_TABLE = "user"
 STATUS_TABLE = "status"
+
+KV_TABLE_CREATE_SQL = (
+    'CREATE TABLE IF NOT EXISTS kv '
+    ' ( _id INTEGER PRIMARY KEY, '
+    ' key TEXT, '
+    ' value TEXT, '
+    ' comment TEXT, '
+    ' added_at TEXT'
+    ' UNIQUE (key) ); '
+)
+
+LOG_TABLE_CREATE_SQL = (
+    'CREATE TABLE IF NOT EXISTS log '
+    ' ( _id INTEGER PRIMARY KEY, '
+    ' tag TEXT, '
+    ' action TEXT, '
+    ' message TEXT, '
+    ' comment TEXT, '
+    ' added_at TEXT'
+    ' UNIQUE (_id) ); '
+)
 
 USER_TABLE_CREATE_SQL = (
     'CREATE TABLE IF NOT EXISTS user '
     ' ( _id INTEGER PRIMARY KEY, '
     ' id TEXT, '
     ' screen_name TEXT, '
-    ' created_at INTEGER, '
-    ' added_at INTEGER, '
+    ' created_at TEXT, '
+    ' added_at TEXT, '
     ' data TEXT, '
     ' UNIQUE (id) ); '
 )
@@ -24,8 +47,9 @@ STATUS_TABLE_CREATE_SQL = (
     ' id TEXT, '
     ' rid INTEGER, '
     ' uid TEXT,'
-    ' created_at INTEGER, '
-    ' added_at INTEGER, '
+    ' created_at TEXT, '
+    ' added_at TEXT, '
+    ' has_image INTEGER, '
     ' data TEXT, '
     ' UNIQUE (rid) ); '
 )

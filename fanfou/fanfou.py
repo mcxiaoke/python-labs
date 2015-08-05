@@ -15,6 +15,7 @@ class FanfouError(Exception):
         self.response = response
 
 # https://github.com/FanfouAPI/FanFouAPIDoc/wiki/Apicategory
+# date time format --> Wed Aug 05 12:59:18 +0000 2015
 
 
 class FanfouClient:
@@ -42,11 +43,15 @@ class FanfouClient:
     def _send_request(self, method, path, **kwargs):
         print "[request] %s %s %s" % (method, path, kwargs)
         url = self._get_url(path)
-        r = requests.request(method, url, auth=self.oauth, **kwargs)
-        if r.status_code >= 200 and r.status_code < 400:
-            return r.json()
-        else:
-            raise FanfouError(response)
+        try:
+            r = requests.request(method, url, auth=self.oauth, **kwargs)
+            print "[response]", r.url, r.status_code, r.encoding
+            if r.status_code >= requests.codes.ok and r.status_code < 400:
+                return r.json()
+            else:
+                raise FanfouError(r)
+        except requests.RequestException, e:
+            print e
 
     def get(self, path, **kwargs):
         return self._send_request("GET", path, **kwargs)
@@ -176,3 +181,11 @@ class FanfouClient:
         data = kwargs if kwargs else {}
         data['status'] = status
         return self.post("/account/update_profile", data=data)
+
+if __name__ == '__main__':
+    client = FanfouClient()
+    print client.login("test", "test")
+    # print client.verify()
+    user = client.get_user("wangxing", mode="default", format="html")
+    timeline = client.get_user_timeline("blessedkristin", count=1)
+    # client.get("/user/12343")

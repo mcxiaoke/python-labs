@@ -4,6 +4,7 @@
 # @Date:   2015-08-05 07:49:55
 
 from fanfou import FanfouClient
+import sys
 #import dataset
 
 # requests
@@ -12,11 +13,12 @@ from fanfou import FanfouClient
 #
 
 if __name__ == '__main__':
+    print sys.argv
     client = FanfouClient()
-    print client.login("test", "test")
+    #print client.login("test", "test")
     # print client.verify()
-    user = client.get_user("wangxing", mode="default", format="html")
-    timeline=client.get_user_timeline("blessedkristin", count=1)
+    #user = client.get_user("wangxing", mode="default", format="html")
+    #timeline=client.get_user_timeline("blessedkristin", count=1)
     # print user
     # print timeline[0]
 

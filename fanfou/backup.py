@@ -6,28 +6,32 @@
 import fanfou
 import utils
 import time
+import sys
 from db import DB
 
 
-def main():
-    account = ("test", "test")
-    saved_token = utils.load_oauth_token(account[0])
+def main(username,password,target=None):
+    saved_token = utils.load_oauth_token(username)
     if saved_token:
-        print 'load saved token: %s for account: %s' % (saved_token, account[0])
+        print 'load saved token: %s for %s' % (saved_token, username)
     else:
         print "no saved toen, get token from server..."
     api = fanfou.FanfouClient()
     if saved_token:
         api.set_oauth_token(saved_token)
     if not api.is_verified():
-        new_token = api.login(account[0], account[1])
+        new_token = api.login(username, password)
         print 'save new token: %s' % new_token
-        utils.save_oauth_token(account[0], new_token)
-    user = api.get_user("androidsupport")
+        utils.save_oauth_token(username, new_token)
+    target_id= target if target else api.user['id']
+    user = api.get_user(target_id)
+
     print "prepare backup data for user: %s (%s)" % (
         user['screen_name'], user['id'])
     db = DB('%s_data.db' % user['id'])
-    while(False):
+    # TODO 备份旧的中断后要能断点续传
+    # TODO 如果有新增的也需要增量备份
+    while(True):
         uid = user['id']
         count = 60
         top_status = db.get_top_status()
@@ -47,4 +51,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) <3:
+        print "python usage %s username password target" % sys.argv[0]
+        sys.exit(1)
+    username=sys.argv[1]
+    password=sys.argv[2]
+    target=sys.argv[3] if len(sys.argv)>3 else None
+    main(username,password,target)

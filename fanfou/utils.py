@@ -11,7 +11,7 @@ import json
 
 def save_oauth_token(account, token):
     file_name = 'token_%s.dat' % account
-    f = open(file_name, 'wb')
+    f = open(file_name.replace("@","_"), 'wb')
     with f:
         store.dump(token, f)
 
@@ -19,7 +19,7 @@ def save_oauth_token(account, token):
 def load_oauth_token(account):
     file_name = 'token_%s.dat' % account
     try:
-        f = open(file_name, 'rb')
+        f = open(file_name.replace("@","_"), 'rb')
         with f:
             return store.load(f)
     except IOError:

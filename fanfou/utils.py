@@ -7,19 +7,35 @@ from datetime import datetime
 import time
 import cPickle as store
 import json
+import argparse
 
 
-def save_oauth_token(account, token):
-    file_name = 'token_%s.dat' % account
-    f = open(file_name.replace("@","_"), 'wb')
-    with f:
-        store.dump(token, f)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'username', help='your fanfou.com account username')
+    parser.add_argument(
+        'password', help='your fanfou.com account password')
+    parser.add_argument('-u', '--userid',
+                        help='user id to backup, default is current user')
+    # parser.add_argument('-l','--log',type=argparse.FileType('wb', 0), help='write process log to file')
+    parser.add_argument('-v', '--verbose', help='show verbose process details')
+    args = parser.parse_args()
+    return args
 
 
-def load_oauth_token(account):
-    file_name = 'token_%s.dat' % account
+def save_account_info(username, token):
+    if username and token:
+        file_name = 'account_%s.dat' % username
+        f = open(file_name.replace("@", "_"), 'wb')
+        with f:
+            store.dump(token, f)
+
+
+def load_account_info(username):
+    file_name = 'account_%s.dat' % username
     try:
-        f = open(file_name.replace("@","_"), 'rb')
+        f = open(file_name.replace("@", "_"), 'rb')
         with f:
             return store.load(f)
     except IOError:

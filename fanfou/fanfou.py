@@ -49,7 +49,7 @@ class FanfouClient:
         url = self._get_url(path)
         try:
             r = requests.request(method, url, auth=self.oauth, **kwargs)
-            #print "[response]", r.url, r.status_code, r.encoding
+            # print "[response]", r.url, r.status_code, r.encoding
             if r.status_code >= requests.codes.ok and r.status_code < 400:
                 return r.json()
             else:
@@ -58,7 +58,7 @@ class FanfouClient:
             print e
 
     def set_oauth_token(self, oauth_token):
-        self._check_auth(oauth_token)
+        return self._check_auth(oauth_token)
 
     def is_verified(self):
         return self.oauth_token and self.user
@@ -82,6 +82,9 @@ class FanfouClient:
         print "login successful, token is", access_token
         self._check_auth(access_token)
         return access_token
+
+    def verify_credentials(self):
+        return self.get("/account/verify_credentials")
 
     def get_rate_limit_status(self):
         return self.get("/account/rate_limit_status")
@@ -166,9 +169,6 @@ class FanfouClient:
         params["q"] = keyword
         return self.get("/search/users", params=params)
 
-    def verify_credentials(self):
-        return self.get("/account/verify_credentials")
-
     def get_user(self, user_id, **kwargs):
         params = kwargs if kwargs else {}
         params["id"] = user_id
@@ -197,6 +197,6 @@ if __name__ == '__main__':
     client = FanfouClient()
     client.login("test", "test")
     client.verify_credentials()
-    #client.get_home_timeline(count=1)
+    # client.get_home_timeline(count=1)
     #user = client.get_user("wangxing", mode="default", format="html")
     #timeline = client.get_user_timeline("blessedkristin", count=1)

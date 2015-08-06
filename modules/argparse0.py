@@ -2,14 +2,15 @@
 # Created by mcxiaoke on 15/7/6 08:07.
 __author__ = 'mcxiaoke'
 
-import os, sys
-
-# 命令行参处理
-# Python 2.7.6 (default, Nov 10 2013, 19:24:18) [MSC v.1500 32 bit (Intel)] on win32
-
+import os
+import sys
 import argparse
 
-parser = argparse.ArgumentParser()
+# 命令行参处理
+# Python 2.7.6 (default, Nov 10 2013, 19:24:18) [MSC v.1500 32 bit
+# (Intel)] on win32
+
+#parser = argparse.ArgumentParser()
 # 默认会添加 -h/--help 的命令行参数解析
 '''
 >python argparse0.py --help
@@ -21,7 +22,6 @@ optional arguments:
 usage: argparse0.py [-h]
 argparse0.py: error: unrecognized arguments: hello
 '''
-
 
 # parser.add_argument('echo')
 # args = parser.parse_args()
@@ -324,10 +324,11 @@ print parser.parse_args(['--version'])  # hello 2.0.0 x86-64
 '''
 
 # nargs 单个动作可关联多个参数
+'''
 parser = argparse.ArgumentParser(prog='hello')
 parser.add_argument('--foo', nargs=2)
 parser.add_argument('bar', nargs=1)
 print parser.parse_args('c --foo a b'.split())
 # out: Namespace(bar=['c'], foo=['a', 'b'])
-
-# --> 15.4.3.3. nargs
+'''
+#print parser.parse_args('myname mypassword mytarget -log output.txt'.split())

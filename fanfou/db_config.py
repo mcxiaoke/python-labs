@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-08-05 21:04:24
-DB_NAME = "fanfou.db"
 
 KV_TABLE = "kv"
 LOG_TABLE = "log"

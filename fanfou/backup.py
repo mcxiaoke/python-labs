@@ -4,7 +4,6 @@
 # @Date:   2015-08-06 07:23:50
 
 import fanfou
-import cPickle as store
 import utils
 import time
 from db import DB
@@ -13,7 +12,10 @@ from db import DB
 def main():
     account = ("test", "test")
     saved_token = utils.load_oauth_token(account[0])
-    print 'load saved token: %s for account: %s' % (saved_token, account[0])
+    if saved_token:
+        print 'load saved token: %s for account: %s' % (saved_token, account[0])
+    else:
+        print "no saved toen, get token from server..."
     api = fanfou.FanfouClient()
     if saved_token:
         api.set_oauth_token(saved_token)
@@ -36,7 +38,7 @@ def main():
         if not timeline:
             break
         print len(timeline)
-        c = db.bulk_insert_status(timeline)
+        db.bulk_insert_status(timeline)
         time.sleep(5)
         if len(timeline) < 60:
             break

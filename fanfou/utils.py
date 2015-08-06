@@ -22,8 +22,8 @@ def load_oauth_token(account):
         f = open(file_name, 'rb')
         with f:
             return store.load(f)
-    except Exception, e:
-        print e
+    except IOError:
+        pass
 
 
 def convert_user(user):

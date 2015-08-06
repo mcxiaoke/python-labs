@@ -2,4 +2,5 @@
 .idea
 .ropeproject
 .project
-.db
+*.db
+*.dat

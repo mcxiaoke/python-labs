@@ -44,14 +44,13 @@ USER_TABLE_CREATE_SQL = (
 STATUS_TABLE_CREATE_SQL = (
     'CREATE TABLE IF NOT EXISTS status '
     ' ( _id INTEGER PRIMARY KEY, '
-    ' id TEXT, '
-    ' rid INTEGER, '
+    ' id INTEGER, '
+    ' sid TEXT, '
     ' uid TEXT,'
     ' created_at TEXT, '
     ' added_at TEXT, '
-    ' has_image INTEGER, '
     ' data TEXT, '
-    ' UNIQUE (rid) ); '
+    ' UNIQUE (id) ); '
 )
 
 

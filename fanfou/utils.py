@@ -5,6 +5,45 @@
 
 from datetime import datetime
 import time
+import cPickle as store
+import json
+
+
+def save_oauth_token(account, token):
+    file_name = 'token_%s.dat' % account
+    f = open(file_name, 'wb')
+    with f:
+        store.dump(token, f)
+
+
+def load_oauth_token(account):
+    file_name = 'token_%s.dat' % account
+    try:
+        f = open(file_name, 'rb')
+        with f:
+            return store.load(f)
+    except Exception, e:
+        print e
+
+
+def convert_user(user):
+    id = user["id"]
+    screen_name = user["screen_name"]
+    created_at = normalize_fanfou_date(user["created_at"])
+    added_at = get_now_datetime_str()
+    data = json.dumps(user)
+    return (id, screen_name, created_at, added_at, data)
+
+
+def convert_status(status):
+    id = status["rawid"]
+    sid = status['id']
+    user = status['user']
+    uid = user['id']
+    created_at = normalize_fanfou_date(status["created_at"])
+    added_at = get_now_datetime_str()
+    data = json.dumps(user)
+    return (id, sid, uid, created_at, added_at, data)
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 FANFOU_DATE_FORMAT = "%a %b %d %H:%M:%S +0000 %Y"

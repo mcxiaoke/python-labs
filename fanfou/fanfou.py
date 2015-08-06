@@ -25,6 +25,8 @@ class FanfouClient:
         self.consumer_secret = config.CONSUMER_SECRET
         self.token_url = config.TOKEN_URL
         self.api_host = config.API_HOST
+        self.oauth_token = None
+        self.user = None
         self._check_auth(oauth_token)
 
     def _get_url(self, path):
@@ -39,19 +41,27 @@ class FanfouClient:
                                 resource_owner_secret=oauth_token[
                                     "oauth_token_secret"],
                                 signature_type='auth_header')
+            self.user = self.verify_credentials()
+            return self.user
 
     def _send_request(self, method, path, **kwargs):
         print "[request] %s %s %s" % (method, path, kwargs)
         url = self._get_url(path)
         try:
             r = requests.request(method, url, auth=self.oauth, **kwargs)
-            print "[response]", r.url, r.status_code, r.encoding
+            #print "[response]", r.url, r.status_code, r.encoding
             if r.status_code >= requests.codes.ok and r.status_code < 400:
                 return r.json()
             else:
                 raise FanfouError(r)
         except requests.RequestException, e:
             print e
+
+    def set_oauth_token(self, oauth_token):
+        self._check_auth(oauth_token)
+
+    def is_verified(self):
+        return self.oauth_token and self.user
 
     def get(self, path, **kwargs):
         return self._send_request("GET", path, **kwargs)
@@ -69,6 +79,7 @@ class FanfouClient:
         client = AuthClient(
             self.consumer_key, self.consumer_secret, self.token_url)
         access_token = client.get_access_token(username, password)
+        print "login successful, token is", access_token
         self._check_auth(access_token)
         return access_token
 
@@ -155,7 +166,7 @@ class FanfouClient:
         params["q"] = keyword
         return self.get("/search/users", params=params)
 
-    def verify(self):
+    def verify_credentials(self):
         return self.get("/account/verify_credentials")
 
     def get_user(self, user_id, **kwargs):
@@ -184,8 +195,8 @@ class FanfouClient:
 
 if __name__ == '__main__':
     client = FanfouClient()
-    print client.login("test", "test")
-    # print client.verify()
-    user = client.get_user("wangxing", mode="default", format="html")
-    timeline = client.get_user_timeline("blessedkristin", count=1)
-    # client.get("/user/12343")
+    client.login("test", "test")
+    client.verify_credentials()
+    #client.get_home_timeline(count=1)
+    #user = client.get_user("wangxing", mode="default", format="html")
+    #timeline = client.get_user_timeline("blessedkristin", count=1)

@@ -4,12 +4,8 @@
 # @Date:   2015-08-05 20:07:34
 import sqlite3
 
-from db_config import DB_NAME
 from db_config import USER_TABLE_CREATE_SQL
-from db_config import USER_TABLE
 from db_config import STATUS_TABLE_CREATE_SQL
-from db_config import STATUS_TABLE
-import json
 import utils
 
 
@@ -66,16 +62,32 @@ class DB:
         self.conn.commit()
         return c
 
-    def get_top_user(self):
+        # oldest user order by creation time
+    def get_oldest_user(self):
         c = self.conn.cursor()
         c.execute("select id,screen_name,created_at from user "
                   "order by created_at ASC limit 1;")
         return c.fetchone()
 
-    def get_top_status(self):
+        # oldest status order by creation time
+    def get_oldest_status(self):
         c = self.conn.cursor()
         c.execute("select id,sid,uid,created_at from status "
                   "order by created_at ASC limit 1;")
+        return c.fetchone()
+
+        # latest user order by creation time
+    def get_latest_user(self):
+        c = self.conn.cursor()
+        c.execute("select id,screen_name,created_at from user "
+                  "order by created_at DESC limit 1;")
+        return c.fetchone()
+
+        # latest status order by creation time
+    def get_latest_status(self):
+        c = self.conn.cursor()
+        c.execute("select id,sid,uid,created_at from status "
+                  "order by created_at DESC limit 1;")
         return c.fetchone()
 
     def insert_user(self, user):
@@ -119,10 +131,12 @@ class DB:
         return c
 
     def print_status(self):
-        print 'users count:', self.get_user_count()
+        #print 'users count:', self.get_user_count()
+        #print 'oldest user:', self.get_oldest_user()
+        #print 'latest user:', self.get_latest_user()
         print 'status count:', self.get_status_count()
-        print 'oldest user:', self.get_top_user()
-        print 'oldest status:', self.get_top_status()
+        print 'oldest status:', self.get_oldest_status()
+        print 'latest status:', self.get_latest_status()
 
 
 if __name__ == '__main__':

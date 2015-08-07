@@ -7,87 +7,65 @@ import sqlite3
 from db_config import USER_TABLE_CREATE_SQL
 from db_config import STATUS_TABLE_CREATE_SQL
 import utils
+from basedb import BaseDB
 
 
-class DB:
+class DB(BaseDB):
 
     def __init__(self, db_name):
-        self.db_db = db_name
-        self.conn = sqlite3.connect(db_name)
-        self.conn.row_factory = sqlite3.Row
-        self._check_db()
+        super(DB, self).__init__(db_name)
+        self._create_tables()
 
-    def close(self):
-        self.conn.close()
-
-    def _check_db(self):
+    def _create_tables(self):
         conn = self.conn
         conn.execute(USER_TABLE_CREATE_SQL)
         conn.execute(STATUS_TABLE_CREATE_SQL)
         conn.commit()
 
-    def _get_rows_count(self, table_name):
-        return self.conn.execute(
-            'select count(_id) from %s;' % table_name).fetchone()
-
     def get_user_count(self):
-        return self._get_rows_count('user')[0]
+        return self.get_count('user')
 
     def get_status_count(self):
-        return self._get_rows_count('status')[0]
+        return self.get_count('status')
 
     def get_all_user_ids(self):
-        rows = self.conn.execute('select id from user').fetchall()
+        rows = self.execute('select id from user').fetchall()
         ids = [row['id'] for row in rows]
         return ids
 
     def get_all_status_ids(self):
-        rows = self.conn.execute('select id from status').fetchall()
+        rows = self.execute('select id from status').fetchall()
         ids = [row['id'] for row in rows]
         return ids
 
-    def _get_all_rows(self, table_name):
-        return self.conn.execute(
-            'select * from %s;' % table_name).fetchall()
-
     def get_all_users(self):
-        return self._get_all_rows('user')
+        return self.fetch_all('user')
 
     def get_all_status(self):
-        return self._get_all_rows('status')
-
-    def execute(self, sql, parameters=None):
-        c = self.conn.cursor()
-        c.execute(sql, parameters)
-        self.conn.commit()
-        return c
+        return self.fetch_all('status')
 
         # oldest user order by creation time
     def get_oldest_user(self):
-        c = self.conn.cursor()
-        c.execute("select id,screen_name,created_at from user "
-                  "order by created_at ASC limit 1;")
+        c = self.execute("select id,screen_name,created_at from user "
+                         "order by created_at ASC limit 1;")
         return c.fetchone()
 
         # oldest status order by creation time
     def get_oldest_status(self):
-        c = self.conn.cursor()
-        c.execute("select id,sid,uid,created_at from status "
-                  "order by created_at ASC limit 1;")
+        c = self.execute("select id,sid,uid,created_at from status "
+                         "order by created_at ASC limit 1;")
         return c.fetchone()
 
         # latest user order by creation time
     def get_latest_user(self):
-        c = self.conn.cursor()
-        c.execute("select id,screen_name,created_at from user "
-                  "order by created_at DESC limit 1;")
+        c = self.execute("select id,screen_name,created_at from user "
+                         "order by created_at DESC limit 1;")
         return c.fetchone()
 
         # latest status order by creation time
     def get_latest_status(self):
-        c = self.conn.cursor()
-        c.execute("select id,sid,uid,created_at from status "
-                  "order by created_at DESC limit 1;")
+        c = self.execute("select id,sid,uid,created_at from status " +
+                         "order by created_at DESC limit 1;")
         return c.fetchone()
 
     def insert_user(self, user):
@@ -131,9 +109,9 @@ class DB:
         return c
 
     def print_status(self):
-        #print 'users count:', self.get_user_count()
-        #print 'oldest user:', self.get_oldest_user()
-        #print 'latest user:', self.get_latest_user()
+        # print 'users count:', self.get_user_count()
+        # print 'oldest user:', self.get_oldest_user()
+        # print 'latest user:', self.get_latest_user()
         print 'status count:', self.get_status_count()
         print 'oldest status:', self.get_oldest_status()
         print 'latest status:', self.get_latest_status()

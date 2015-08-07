@@ -18,7 +18,7 @@ class FanfouError(Exception):
 # date time format --> Wed Aug 05 12:59:18 +0000 2015
 
 
-class FanfouClient:
+class FanfouClient(object):
 
     def __init__(self, oauth_token=None):
         self.consumer_key = config.CONSUMER_KEY

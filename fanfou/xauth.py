@@ -5,7 +5,7 @@ import urlparse
 from collections import namedtuple
 
 
-class AuthClient:
+class AuthClient(object):
 
     '''
     XAuth Client

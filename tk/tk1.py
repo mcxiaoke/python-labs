@@ -224,44 +224,169 @@ win.mainloop()
 3. 后面的控件分配整个剩余部分的空间
 4. 最后处理expand和fill参数，扩展和伸缩
 '''
+'''
 # 因此上面的例子调整一下顺序，布局就不同了
 def greeting():
     print('hello, print greeting!')
 win=Frame()
 win.pack()
-'''
+
 Button(win, text='Hello', command=greeting).pack(side=LEFT) 
 Label(win, text='Hello container world').pack(side=TOP)
 Button(win, text='Quit', command=win.quit).pack(side=RIGHT) 
-'''
-'''
+
+
 Button(win, text='Hello', command=greeting).pack(side=LEFT,fill=Y)
 Label(win, text='Hello container world').pack(side=TOP)
 Button(win, text='Quit', command=win.quit).pack(side=RIGHT, expand=YES, fill=X)
-'''
-'''
+
 win.pack(side=TOP, expand=YES, fill=BOTH)
 Button(win, text='Hello', command=greeting).pack(side=LEFT, fill=Y)
 Label(win, text='Hello container world').pack(side=TOP)
 Button(win, text='Quit', command=win.quit).pack(side=RIGHT, expand=YES,fill=X)
-'''
+
 # fill和anchor属性是在根据side属性分配空间之后才应用到控件上
 Button(win, text='Hello', command=greeting).pack(side=LEFT, anchor=N) 
 Label(win, text='Hello container world').pack(side=TOP)
 Button(win, text='Quit', command=win.quit).pack(side=RIGHT)
 win.mainloop()
+'''
+
+# 自定义控件
+# 通过继承定制样式和行为
+'''
+class HelloButton(Button):
+    def __init__(self,parent=None,**config):
+        Button.__init__(self,parent,**config)
+        self.pack()
+        self.config(command=self.callback)
+
+    def callback(self):
+        print('Goodbye, I\'m quit now.')
+        self.quit()
+
+class MyButton(HelloButton):
+    # 重定义父类的行为
+    def callback(self):
+        print('Ignore press, not quit.')
+
+class ThemedButton(Button):
+    def __init__(self,parent=None,**configs):
+        Button.__init__(self,parent,**configs)
+        self.pack()
+        self.config(fg='red',bg='black',
+            font=('courier',12),relief=RAISED,bd=5)
+
+class MyThemedButton(ThemedButton):
+    def __init__(self,parent=None,**configs):
+        ThemedButton.__init__(self,parent,**configs)
+        self.config(text='subcass button')
+
+if __name__ == '__main__':
+    # HelloButton(text='Quit Button').mainloop()
+    # MyButton(text='Quit Button').mainloop()
+    # ThemedButton(text='Button',command=sys.exit).mainloop()
+    MyThemedButton(text='ThemedButton',command=sys.exit).mainloop()
+'''
+
+# GUI组件复用
+# 在内部定制样式，保存状态信息，定制组件是可以复用的
+'''
+
+class Hello(Frame):
+
+    def __init__(self, parent=None):
+        Frame.__init__(self, parent)
+        self.pack()
+        self.data = 42
+        self.make_widgets()
+
+    def make_widgets(self):
+        widget = Button(self, text='Hello Button', command=self.message)
+        widget.pack(side=LEFT)
+
+    def message(self):
+        self.data += 1
+        print('hello message, count=%s' % self.data)
+
+# 通过多层的控件和容器组合，构建复杂的GUI
 
 
-## 自定义控件
-# p442
+class HelloContainer(Frame):
+
+    def __init__(self, parent=None):
+        Frame.__init__(self, parent)
+        self.pack()
+        self.make_widgets()
+
+    def make_widgets(self):
+        Hello(self).pack(side=RIGHT)
+        Button(self, text='Attach', command=self.quit).pack(side=LEFT)
 
 
+class HelloExtender(Hello):
+
+    def make_widgets(self):
+        Hello.make_widgets(self)
+        Button(self, text='Extend', command=self.quit).pack(side=RIGHT)
+
+    def message(self):
+        print('hello extender ', self.data)
 
 
+def test1():
+    parent = Frame(None)
+    parent.pack()
+    Hello(parent).pack(side=RIGHT)
+    Button(parent, text='Quit', command=sys.exit).pack(side=LEFT)
+    parent.mainloop()
 
 
+def test2():
+    HelloContainer().mainloop()
 
+def test3():
+    HelloExtender().mainloop()
 
+test3()
+'''
 
+# 单独的容器类
 
+# 这种方式避免了将数据状态和GUI组件绑定在一起
+# 也可以避免和Tkinter内部的名字冲突
+class HelloPackage:
 
+    def __init__(self, parent=None):
+        self.top = Frame(parent)
+        self.top.pack()
+        self.data = 0
+        self.make_widgets()
+
+    def make_widgets(self):
+        Button(self.top, text='Button1', command=self.top.quit).pack(side=LEFT)
+        Button(self.top, text='Button2', command=self.message).pack(side=RIGHT)
+
+    def message(self):
+        self.data += 1
+        print('hello number ', self.data)
+
+#HelloPackage().top.mainloop()
+'''
+root=Frame()
+root.pack()
+# default side is side=TOP
+Label(root,text='hello').pack()
+app=HelloPackage(root)
+# 这里top才是GUI组件，所以需要top.pack()
+app.top.pack(side=RIGHT)
+root.mainloop()
+'''
+
+# 解决办法是这样
+
+class HelloPackage2(HelloPackage):
+    def __getattr__(self,name):
+        return getattr(self.top,name)
+
+HelloPackage2().mainloop()

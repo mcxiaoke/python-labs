@@ -6,6 +6,8 @@ from __future__ import print_function
 import sys
 import os
 from Tkinter import *
+from tkSimpleDialog import askstring
+from tkFileDialog import asksaveasfilename
 from tkMessageBox import askquestion, askyesno
 from tkMessageBox import showerror, showinfo, showwarning
 
@@ -314,85 +316,280 @@ def listbox_scrollbar_demo():
     options = (('No.%s List-Item-Of-Something' % x) for x in range(20))
     ScrolledList(options).mainloop()
 
-#listbox_scrollbar_demo()
+# listbox_scrollbar_demo()
 
 
 # 文本控件 Text
 # Text控件是Tk里最强大的控件，支持复杂的字体样式设置，嵌入图片，重做和撤销等
 class ScrolledText(Frame):
-    def __init__(self,parent=None,text='',file=None):
-        Frame.__init__(self,parent)
-        self.pack(expand=YES,fill=BOTH)
+
+    def __init__(self, parent=None, text='', file=None):
+        Frame.__init__(self, parent)
+        # 自动扩展空间
+        self.pack(expand=YES, fill=BOTH)
         self.makeWidgets()
-        self.settext(text,file)
+        self.settext(text, file)
 
     def makeWidgets(self):
-        text=Text(self,relief=SUNKEN)
-        sbar=Scrollbar(self)
+        text = Text(self, relief=SUNKEN)
+        sbar = Scrollbar(self)
+        # 连接滚动条
         sbar.config(command=text.yview)
         text.config(yscrollcommand=sbar.set)
-        sbar.pack(side=RIGHT,fill=Y)
-        text.pack(side=LEFT,expand=YES,fill=BOTH)
-        self.text=text
+        # 先布置滚动条
+        sbar.pack(side=RIGHT, fill=Y)
+        text.pack(side=LEFT, expand=YES, fill=BOTH)
+        self.text = text
 
-    def settext(self,text='',file=None):
+    def settext(self, text='', file=None):
         if file:
-            text=open(file,'r').read()
-        self.text.delete('1.0',END)
-        self.text.insert('1.0',text)
-        self.text.mark_set(INSERT,'1.0')
+            text = open(file, 'r').read()
+        # 删除当前的文本
+        self.text.delete('1.0', END)
+        # 从最开始插入新文本
+        self.text.insert('1.0', text)
+        # 光标移动到开头
+        self.text.mark_set(INSERT, '1.0')
+        # 获取焦点
         self.text.focus()
 
     def gettext(self):
-        return self.text.get('1.0',END+'-1c')
+        # 返回全部文本
+        # 1.0 表示第1行第0列 -1c表示一个字符之前
+        return self.text.get('1.0', END+'-1c')
+
 
 def scrolled_text_demo():
-    root=Tk()
-    if len(sys.argv)>1:
-        st=ScrolledText(file=sys.argv[1])
+    root = Tk()
+    if len(sys.argv) > 1:
+        st = ScrolledText(file=sys.argv[1])
     else:
-        st=ScrolledText(text='Words\ngo here')
+        st = ScrolledText(text='Words\ngo here')
 
     def show(event):
         print(repr(st.gettext()))
 
-    root.bind('<Key-Escape>',show)
+    root.bind('<Key-Escape>', show)
     root.mainloop()
 
-scrolled_text_demo()
-# p528 570
+# scrolled_text_demo()
+
+from tk2_quitter import Quitter
 
 
+class SimpleEditor(ScrolledText):
+    # Text控件内部保存的是字符串str
+
+    def __init__(self, parent=None, file=None):
+        frm = Frame(parent)
+        frm.pack(fill=X)
+        Button(frm, text='Save', command=self.onSave).pack(side=LEFT)
+        Button(frm, text='Cut', command=self.onCut).pack(side=LEFT)
+        Button(frm, text='Paste', command=self.onPaste).pack(side=LEFT)
+        Button(frm, text='Find', command=self.onFind).pack(side=LEFT)
+        Quitter(frm).pack(side=LEFT)
+        ScrolledText.__init__(self, parent, file=file)
+        self.text.config(font=('courier', 12, 'normal'))
+
+    def onSave(self):
+        filename = asksaveasfilename()
+        if filename:
+            alltext = self.gettext()
+            open(filename, 'w').write(alltext)
+
+    def onCut(self):
+        # 复制选中的文本当剪贴板，如果没有文本选中，会报错
+        text = self.text.get(SEL_FIRST, SEL_LAST)
+        self.text.delete(SEL_LAST, SEL_LAST)
+        # 清空剪贴板
+        self.clipboard_clear()
+        # 设置剪贴板文本
+        self.clipboard_append(text)
+        print("Cut: ", text)
+
+    def onPaste(self):
+        try:
+            # 获取剪贴板中的文本
+            text = self.selection_get(selection='CLIPBOARD')
+            print("Paste: ", text)
+            # 插入到当前位置
+            self.text.insert(INSERT, text)
+        except TclError:
+            pass
+
+    def onFind(self):
+        target = askstring('SimpleEditor', 'Search String')
+        if target:
+            # 从当前位置开始查找
+            where = self.text.search(target, INSERT, END)
+            if where:
+                print(where)
+                pastit = where+('+%dc' % len(target))
+                self.text.tag_add(SEL, '1.0', END)
+                self.mark_set(INSERT, pastit)
+                # 滚动到光标位置
+                self.text.see(INSERT)
+                self.text.focus()
 
 
+def simple_editor_demo():
+    if len(sys.argv) > 1:
+        SimpleEditor(file=sys.argv[1]).mainloop()
+    else:
+        SimpleEditor().mainloop()
+
+# simple_editor_demo()
 
 
+# Grid布局管理器
+'''
+之前一直使用的pack方法表示用packer布局管理器
+Grid按行和列排列控件
+
+'''
 
 
+def grid_basics_demo():
+    colors = ['red', 'green', 'orange', 'white', 'yellow', 'blue']
+    r = 0
+    for c in colors:
+        # row 表示行，column表示列，都是从0开始计数
+        # 行列会自动对齐
+        Label(text=c, relief=RIDGE, width=20).grid(row=r, column=0)
+        Entry(bg=c, relief=SUNKEN, width=30).grid(row=r, column=1)
+        r += 1
+
+    mainloop()
+
+# grid_basics_demo()
+
+colors = ['red', 'green', 'orange', 'white', 'yellow', 'blue']
 
 
+def gridbox(parent):
+    'grid by row/column numbers'
+    row = 0
+    for color in colors:
+        lab = Label(parent, text=color, relief=RIDGE, width=25)
+        ent = Entry(parent, bg=color, relief=SUNKEN, width=50)
+        lab.grid(row=row, column=0)
+        ent.grid(row=row, column=1)
+        ent.insert(0, 'grid')
+        row += 1
 
 
+def packbox(parent):
+    'row frames with fixed-width labels'
+    for color in colors:
+        row = Frame(parent)
+        lab = Label(row, text=color, relief=RIDGE, width=25)
+        ent = Entry(row, bg=color, relief=SUNKEN, width=50)
+        row.pack(side=TOP)
+        lab.pack(side=LEFT)
+        ent.pack(side=RIGHT)
+        ent.insert(0, 'pack')
 
 
+def grid_pack_compare():
+    root = Tk()
+    root.title('Main')
+    root.minsize(320, 240)
+    gridbox(Toplevel())
+    packbox(Toplevel())
+    mainloop()
+
+# grid_pack_compare()
 
 
+def grid_pack_combine():
+    root = Tk()
+    Label(root, text='Grid:').pack()
+    frm = Frame(root, bd=5, relief=RAISED)
+    frm.pack(padx=5, pady=5)
+    gridbox(frm)
+    Label(root, text='Pack:').pack()
+    frm = Frame(root, bd=5, relief=RAISED)
+    frm.pack(padx=5, pady=5)
+    packbox(frm)
+
+    Button(root, text='Quit', command=root.quit).pack()
+    mainloop()
+
+# grid_pack_combine()
 
 
+def fail_grid_pack_combine():
+    # 对同一个容器不要混合使用两种布局管理器
+    root = Tk()
+    gridbox(root)
+    packbox(root)
+    Button(root, text='Some Text').pack()
+    mainloop()
+
+# fail_grid_pack_combine()
 
 
+def work_grid_pack_combine():
+    root = Tk()
+    frm = Frame(root)
+    frm.pack()
+    # 不是同一个parent，所以可以
+    gridbox(frm)
+    Button(root, text='Quit', command=root.quit).pack()
+    packbox(root)
+    mainloop()
+
+# work_grid_pack_combine()
 
 
+def gridbox2(root):
+    # columnspan=2 表示占用两列
+    Label(root, text='Grid').grid(columnspan=2)
+    row = 1
+    for color in colors:
+        lab = Label(root, text=color, relief=RIDGE, width=25)
+        ent = Entry(root, bg=color, relief=SUNKEN, width=50)
+        # sticky相当于pack里的fill和anchor
+        # NSEW表示四个方向
+        lab.grid(row=row, column=0, sticky=NSEW)
+        ent.grid(row=row, column=1, sticky=NSEW)
+        # 配置行
+        root.rowconfigure(row, weight=1)
+        row += 1
+    # 配置列
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=1)
 
 
+def packbox2(root):
+    Label(root, text='Pack').pack()
+    for color in colors:
+        row = Frame(root)
+        lab = Label(row, text=color, relief=RIDGE, width=25)
+        ent = Entry(row, bg=color, relief=SUNKEN, width=50)
+        row.pack(side=TOP, expand=YES, fill=BOTH)
+        lab.pack(side=LEFT, expand=YES, fill=BOTH)
+        ent.pack(side=RIGHT, expand=YES, fill=BOTH)
 
 
+# 可缩放的Grid控件
+
+def grid_expandable_demo():
+    root = Tk()
+    gridbox2(Toplevel(root))
+    packbox2(Toplevel(root))
+    Button(root, text='Quit', command=root.quit).pack()
+    mainloop()
+
+# grid_expandable_demo()
 
 
+def grid_table_demo():
+    for i in range(5):
+        for j in range(4):
+            lab = Label(text='%d-%d' % (i, j), relief=RIDGE)
+            lab.grid(row=i, column=j, sticky=NSEW)
+    mainloop()
 
-
-
-
-
-
-
+# grid_table_demo()
+# p616 p574

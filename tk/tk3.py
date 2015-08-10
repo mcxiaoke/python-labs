@@ -593,3 +593,114 @@ def grid_table_demo():
 
 # grid_table_demo()
 # p616 p574
+
+def grid_demo_5b():
+    numrow,numcol=5,4
+    rows=[]
+    for i in range(numrow):
+        cols=[]
+        for j in range(numcol):
+            ent=Entry(relief=RIDGE)
+            ent.grid(row=i,column=j,sticky=NSEW)
+            ent.insert(END,'%d.%d' % (i,j))
+            cols.append(ent)
+        rows.append(cols)
+
+    sums=[]
+    for i in range(numcol):
+        lab=Label(text='?',relief=SUNKEN)
+        lab.grid(row=numrow,column=i,sticky=NSEW)
+        sums.append(lab)
+
+    def onPrint():
+        for row in rows:
+            for col in row:
+                print(col.get(),end=' ')
+            print()
+        print()
+
+    def onSum():
+        tots=[0]*numcol
+        for i in range(numcol):
+            for j in range(numrow):
+                tots[i] += eval(rows[j][i].get())
+        for i in range(numcol):
+            sums[i].config(text=str(tots[i]))
+
+    def onClear():
+        for row in rows:
+            for col in row:
+                col.delete('0',END)
+                col.insert(END,'0.0')
+        for sum in sums:
+            sum.config(text='?')
+
+    Button(text='Sum',command=onSum).grid(row=numrow+1, column=0)
+    Button(text='Print',command=onPrint).grid(row=numrow+1,column=1)
+    Button(text='Clear',command=onClear).grid(row=numrow+1,column=2)
+    Button(text='Quit',command=sys.exit).grid(row=numrow+1,column=3)
+    mainloop()
+
+# grid_demo_5b()
+
+
+# 延时，线程和动画
+'''
+widget.after(milliseconds, function, *args) 延时执行函数
+widget.after(milliseconds) 暂停程序若干毫秒
+widget.after_idle(function, *args) 空闲处理函数
+widget.wait_variable(var) 暂停直到值变化
+widget.wait_window(win) 暂停直到窗口销毁
+widget.wait_visibility(win) 暂停直到窗口可见
+
+Tk中也是只有主线程可以操作GUI组件
+'''
+
+class NumCounter(Frame):
+    def __init__(self,msecs=1000):
+        Frame.__init__(self)
+        self.msecs=msecs
+        self.pack()
+        self.counter=0
+        label=Label(self,text='0')
+        label.config(bg='navy',fg='white',bd=8)
+        label.pack(fill=X)
+        self.label=label
+        self.repeater()
+
+    def repeater(self):
+        self.counter +=1
+        self.label.config(text=str(self.counter))
+        self.label.update()
+        print(self.counter)
+        self.after(self.msecs,self.repeater)
+
+
+
+
+# 使用after方法
+def after_counter_demo():
+    NumCounter(msecs=1000).mainloop()
+
+# after_counter_demo()
+
+# 窗口和控件的隐藏与重绘
+
+class HideDemo(NumCounter):
+    def repeater(self):
+        self.bell()
+        # 窗口是否在显示？
+        if self.master.state() == 'normal':
+            # 隐藏整个窗口，包括图标
+            self.master.withdraw()
+        else:
+            # 重绘整个窗口
+            self.master.deiconify()
+            # 显示控件
+            self.master.lift()
+        self.after(self.msecs,self.repeater)
+
+def win_hide_demo():
+    HideDemo().mainloop()
+
+#win_hide_demo()

@@ -46,6 +46,12 @@ class ScrolledText(Frame):
     def see(self, index):
         self.text.see(index)
 
+    def bind(self, sequence, func):
+        self.text.bind(sequence, func)
+
+    def update(self):
+        self.text.update()
+
     def gettext(self):
         # 返回全部文本
         # 1.0 表示第1行第0列 -1c表示一个字符之前

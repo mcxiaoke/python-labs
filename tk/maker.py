@@ -26,39 +26,43 @@ class GuiMaker(Frame):
         self.makeWidgets()
 
     def makeMenuBar(self):
-        '''
-        make menubar at top
-        expand=no, fill=x,
-        '''
+        """
+        make menu bar at the top (Tk8.0 menus below)
+        expand=no, fill=x so same width on resize
+        """
         menubar = Frame(self, relief=RAISED, bd=2)
         menubar.pack(side=TOP, fill=X)
 
         for (name, key, items) in self.menuBar:
-            mbutton = Menubutton(menubar, text=name, underline=key)
+            mbutton  = Menubutton(menubar, text=name, underline=key)
             mbutton.pack(side=LEFT)
             pulldown = Menu(mbutton)
             self.addMenuItems(pulldown, items)
             mbutton.config(menu=pulldown)
 
         if self.helpButton:
-            Button(menubar, text='Help', cursor='gumby',
-                   relief=FLAT, command=self.help).pack(side=RIGHT)
+            Button(menubar, text    = 'Help',
+                            cursor  = 'gumby',
+                            relief  = FLAT,
+                            command = self.help).pack(side=RIGHT)
 
     def addMenuItems(self, menu, items):
-        for item in items:
-            if item == 'separator':
+        for item in items:                     # scan nested items list
+            if item == 'separator':            # string: add separator
                 menu.add_separator({})
-            elif type(item) == list:
+            elif type(item) == list:           # list: disabled item list
                 for num in item:
                     menu.entryconfig(num, state=DISABLED)
             elif type(item[2]) != list:
-                menu.add_command(
-                    label=item[0], underline=item[1], command=item[2])
+                menu.add_command(label     = item[0],         # command:
+                                 underline = item[1],         # add command
+                                 command   = item[2])         # cmd=callable
             else:
                 pullover = Menu(menu)
-                self.addMenuItems(pullover, item[2])
-                menu.add_cascade(
-                    label=item[0], underline=item[1], command=item[2])
+                self.addMenuItems(pullover, item[2])          # sublist:
+                menu.add_cascade(label     = item[0],         # make submenu
+                                 underline = item[1],         # add cascade
+                                 menu      = pullover)
 
     def makeToolBar(self):
         '''

@@ -13,6 +13,7 @@ from lib import *
 from tkSimpleDialog import *
 from tkFileDialog import *
 from tkMessageBox import *
+from launchmodes import PortableLauncher,System
 
 class GuiMixin:
 
@@ -49,7 +50,7 @@ class GuiMixin:
 
     def spawn(self,pycmdline,  wait=False):
         if not wait:
-            ProtableLauncher(pycmdline,pycmdline)()
+            PortableLauncher(pycmdline,pycmdline)()
         else:
             System(pycmdline,pycmdline)()
 
@@ -70,7 +71,7 @@ def _mixin_demo():
             Button(self,text='quit',command=self.quit).pack(fill=X)
             Button(self,text='help',command=self.help).pack(fill=X)
             Button(self,text='clone',command=self.clone).pack(fill=X)
-            #Button(self,text='spawn',command=self.other).pack(fill=X)
+            Button(self,text='spawn',command=self.other).pack(fill=X)
 
         def other(self):
             self.spawn('mixin.py')

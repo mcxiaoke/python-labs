@@ -111,8 +111,16 @@ class GuiMakerWindowMenu(GuiMaker):
 def menu_maker_test():
     from mixin import GuiMixin
     menuBar = [
-        ('File', 0, [('Open', 0, lambda:0), ('Quit', 0, sys.exit)]),
-        ('Edit', 0, [('Cut', 0, lambda:0), ('Paste', 0, lambda:0)])]
+        ('File', 0,
+            [('Open', 0, lambda:0),
+             ('Quit', 0,
+                [('Sub 1', 0, sys.exit),
+                    ('Sub 2', 0, lambda:0)
+                 ])]),
+        ('Edit', 0,
+            [('Cut', 0, lambda:0),
+             ('Paste', 0, lambda:0)])]
+
     toolBar = [('Quit', sys.exit, {'side': LEFT})]
 
     class TestAppFrameMenu(GuiMixin, GuiMakeFrameMenu):

@@ -49,11 +49,11 @@ class GuiDemo(GuiMixin, GuiMakerWindowMenu):
                 [('Hello', 0, self.greeting),
                  ('Popups', 0, self.dialog),
                  ('Demos', 0,
-                    [('Toplevels', 0, lambda: self.spawn('mixin.py')),
-                        ('Frames', 0, lambda: self.spawn('tk2.py')),
-                        ('Images', 0, lambda: self.spawn('tk3.py')),
-                        ('Counter', 0, lambda:self.spawn('maker.py')),
-                        ('Other...', 0, self.pickDemo)]
+                    [('Mixin Demo', 0, lambda: self.spawn('mixin.py')),
+                        ('Grid Demo', 0, lambda: self.spawn('tk2.py')),
+                        ('Counter Demo', 0, lambda: self.spawn('tk3.py')),
+                        ('Maker Demo', 0, lambda:self.spawn('maker.py')),
+                        ('Pick Other...', 0, self.pickDemo)]
                   )]
              )]
         self.toolBar = [

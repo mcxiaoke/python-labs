@@ -40,6 +40,12 @@ class ScrolledText(Frame):
         # 获取焦点
         self.text.focus()
 
+    def insert(self, index, text=''):
+        self.text.insert(index, text)
+
+    def see(self, index):
+        self.text.see(index)
+
     def gettext(self):
         # 返回全部文本
         # 1.0 表示第1行第0列 -1c表示一个字符之前

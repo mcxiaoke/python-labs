@@ -682,7 +682,7 @@ class NumCounter(Frame):
 def after_counter_demo():
     NumCounter(msecs=1000).mainloop()
 
-# after_counter_demo()
+after_counter_demo()
 
 # 窗口和控件的隐藏与重绘
 

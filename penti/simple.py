@@ -6,6 +6,7 @@ from __future__ import print_function
 from bs4 import BeautifulSoup
 import requests
 import re
+import codecs
 import Queue as queue
 from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
@@ -17,6 +18,7 @@ urls = []
 lock = Lock()
 
 url_date_pat = re.compile(u'【\S+(\d{8})】')
+url_id_pat = re.compile(u'&id=(\d+)')
 
 
 def url_cmp(ua, ub):
@@ -47,15 +49,16 @@ def findurls(page):
 
 def url_to_item(link):
     item = {}
-    item['text'] = link.text.encode('utf8')
+    item['text'] = link.text
     item['href'] = link.get('href')
-    item['date'] = re.compile(url_date_pat).search(link.text).group(1)
+    item['date'] = re.compile(url_date_pat).search(item['text']).group(1)
+    item['id'] = re.compile(url_id_pat).search(item['href']).group(1)
     return item
 
 if __name__ == '__main__':
     try:
         pool = ThreadPool(8)
-        pool.map(findurls, range(1, 51))
+        pool.map(findurls, range(1, 60))
         pool.close()
         pool.join()
     except KeyboardInterrupt:
@@ -64,5 +67,9 @@ if __name__ == '__main__':
     print(len(urls))
 
     items = [url_to_item(url) for url in sorted(urls, cmp=url_cmp)]
-
-    json.dump(items, open('urls.json', 'w'))
+    # json.dump(items, open('urls.json', 'w'),indent=2) # 输出\uxxxx
+    json.dump(items, codecs.open('urls.json', 'w', 'utf8'),  # 输出中文文字
+              ensure_ascii=False, indent=2)
+    # data = json.load(open('urls.json', 'r'))
+    # for d in data:
+    #     print(d['text'].encode('utf8'))

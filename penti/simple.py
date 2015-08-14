@@ -9,10 +9,12 @@ import re
 import os
 import sys
 import codecs
+import time
 import Queue as queue
 from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
 import json
+import shutil
 
 OUTPUT = 'output'
 
@@ -43,7 +45,7 @@ def myurl(a):
 def findurls(page):
     print('fetch page ' + str(page))
     url = url_tpl.format(page)
-    r = requests.get(url, timeout=10)
+    r = requests.get(url, timeout=20, headers=HEADERS)
     r.encoding = 'gb2312'
     soup = BeautifulSoup(r.text, 'html.parser')
     links = soup.find_all(myurl)
@@ -55,18 +57,59 @@ def findurls(page):
     return links
 
 
-def download_and_save(url, filename):
-    r = requests.get(url)
-    with open(filename, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=512):
-            f.write(chunk)
+def download_image(url, filename):
+    print('download image: {0}'.format(url))
+    tempfile = os.path.join(os.path.dirname(filename),
+                            '{0}.tmp'.format(os.path.basename(filename)))
+    retry = 0
+    error = None
+    while retry < 3:
+        try:
+            r = requests.get(url, timeout=20, headers=HEADERS)
+            with open(tempfile, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024):
+                    f.write(chunk)
+            shutil.move(tempfile, filename)
+            error = None
+            break
+        except Exception, e:
+            print('download image {0}, retry {1}...'.format(e, (retry + 1)))
+            error = e
+            retry += 1
+            time.sleep(retry * 10)
+        finally:
+            try:
+                os.remove(tempfile)
+            except OSError:
+                pass
+    if error:
+        raise error
 
 
 def download_page(item):
-    charset_pat = re.compile(r'charset=(gb2312)')
     id = item['id']
     url = page_tpl.format(id)
-    r = requests.get(url, timeout=20)
+    filename = os.path.join(OUTPUT, '{}.html'.format(id))
+    if os.path.exists(filename):
+        print('page exists, skip {0}'.format(url))
+        return
+    print('download page: {0}'.format(url))
+
+    retry = 0
+    error = None
+    while retry < 3:
+        try:
+            r = requests.get(url, timeout=20, headers=HEADERS)
+            error = None
+            break
+        except Exception, e:
+            print('download page {0}, retry {1}...'.format(e, (retry + 1)))
+            r = None
+            error = e
+            retry += 1
+            time.sleep(retry * 20)
+    if error:
+        raise error
     # 必须用gbk，要不然繁体乱码
     # 虽然网页上写的是gb2312，但是浏览器实际使用的是gbk
     r.encoding = 'gbk'
@@ -89,15 +132,31 @@ def download_page(item):
         if os.path.exists(imgfile):
             print('image exists, skip {0}'.format(from_src))
         else:
-            print('download image {0}'.format(from_src))
-            download_and_save(from_src, imgfile)
+            download_image(from_src, imgfile)
 
-    filename = os.path.join(OUTPUT, '{}.html'.format(id))
-    with open(filename, 'w') as f:
+    tempfile = os.path.join(os.path.dirname(filename),
+                            '{0}.tmp'.format(os.path.basename(filename)))
+    with open(tempfile, 'w') as f:
         # 用utf写入文件，所以html头的gb2312需要改为utf8
-        content = unicode(soup).replace('gb2312', 'utf-8')
+        content = unicode(soup).replace('charset=gb2312', 'charset=utf-8')
         f.write(content.encode('utf8'))
+    shutil.move(tempfile, filename)
+    try:
+        os.remove(tempfile)
+    except OSError:
+        pass
     print('page saved to {0}'.format(filename))
+
+
+def download_pages(items):
+    pool = ThreadPool(4)
+    try:
+        pool.map(download_page, items)
+        pool.close()
+        pool.join()
+    except KeyboardInterrupt:
+        print('terminated by user.')
+        pool.terminate()
 
 
 def url_to_item(link):
@@ -108,35 +167,32 @@ def url_to_item(link):
     item['id'] = re.compile(url_id_pat).search(item['href']).group(1)
     return item
 
-if __name__ == '__main__':
+
+def fetch_or_load_urls(fileanme):
+    if os.path.exists(jsonfile):
+        return json.load(open(jsonfile, 'r'))
     pool = ThreadPool(8)
     try:
-        pool.map(findurls, range(1, 2))
+        pool.map(findurls, range(1, 51))
         pool.close()
         pool.join()
 
     except KeyboardInterrupt:
+        print('terminated by user.')
         pool.terminate()
 
     print(len(urls))
 
     items = [url_to_item(url) for url in sorted(urls, cmp=url_cmp)]
     # json.dump(items, open('urls.json', 'w'),indent=2) # 输出\uxxxx
-    json.dump(items, codecs.open('urls.json', 'w', 'utf8'),  # 输出中文文字
+    json.dump(items, codecs.open(fileanme, 'w', 'utf8'),  # 输出中文文字
               ensure_ascii=False, indent=2)
 
+    return items
+
+if __name__ == '__main__':
     if not os.path.exists(OUTPUT):
         os.mkdir(OUTPUT)
-
-    download_page(items[1])
-    # pool = ThreadPool(8)
-    # try:
-    #     pool.map(download_page, items)
-    #     pool.close()
-    #     pool.join()
-    # except KeyboardInterrupt:
-    #     pool.terminate()
-
-    # data = json.load(open('urls.json', 'r'))
-    # for d in data:
-    #     print(d['text'].encode('utf8'))
+    jsonfile = os.path.join(OUTPUT, 'penti.json')
+    items = fetch_or_load_urls(jsonfile)
+    download_pages(items)

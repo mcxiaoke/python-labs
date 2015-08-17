@@ -18,8 +18,8 @@ import shutil
 
 OUTPUT = 'output'
 
-HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-           'Referer': 'http://www.dapenti.com/blog/blog.asp?subjectid=70&name=xilei'}
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.1234.0 Safari/537.36',
+           'Referer': 'http://www.dapenti.com/'}
 
 url_tpl = 'http://www.dapenti.com/blog/blog.asp?subjectid=70&name=xilei&page={0}'  # page
 page_tpl = 'http://www.dapenti.com/blog/more.asp?name=xilei&id={0}'  # id
@@ -57,33 +57,24 @@ def findurls(page):
     return links
 
 
-def download_image(url, filename):
-    print('download image: {0}'.format(url))
+def safe_rename(src, dst):
+    try:
+        shutil.move(tempfile, filename)
+        os.remove(file)
+    except Exception:
+        pass
+
+
+def download_image(url, filename, id):
+    print('download image for {0}: {1}'.format(id, url))
     tempfile = os.path.join(os.path.dirname(filename),
                             '{0}.tmp'.format(os.path.basename(filename)))
-    retry = 0
-    error = None
-    while retry < 3:
-        try:
-            r = requests.get(url, timeout=20, headers=HEADERS)
-            with open(tempfile, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024):
-                    f.write(chunk)
-            shutil.move(tempfile, filename)
-            error = None
-            break
-        except Exception, e:
-            print('download image {0}, retry {1}...'.format(e, (retry + 1)))
-            error = e
-            retry += 1
-            time.sleep(retry * 10)
-        finally:
-            try:
-                os.remove(tempfile)
-            except OSError:
-                pass
-    if error:
-        raise error
+    r = requests.get(url, timeout=20, headers=HEADERS)
+    with open(tempfile, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            f.write(chunk)
+    safe_rename(tempfile, filename)
+    print('image saved {0}'.format(url))
 
 
 def download_page(item):
@@ -91,33 +82,15 @@ def download_page(item):
     url = page_tpl.format(id)
     filename = os.path.join(OUTPUT, '{}.html'.format(id))
     if os.path.exists(filename):
-        print('page exists, skip {0}'.format(url))
+        print('skip page {0}'.format(url))
         return
     print('download page: {0}'.format(url))
-
-    retry = 0
-    error = None
-    while retry < 3:
-        try:
-            r = requests.get(url, timeout=20, headers=HEADERS)
-            error = None
-            break
-        except Exception, e:
-            print('download page {0}, retry {1}...'.format(e, (retry + 1)))
-            r = None
-            error = e
-            retry += 1
-            time.sleep(retry * 20)
-    if error:
-        raise error
+    r = requests.get(url, timeout=20, headers=HEADERS)
     # 必须用gbk，要不然繁体乱码
     # 虽然网页上写的是gb2312，但是浏览器实际使用的是gbk
     r.encoding = 'gbk'
-    print(r.status_code)
     soup = BeautifulSoup(r.text, 'html.parser')
-
     imgs = soup.find_all('img')
-
     imgdir = os.path.join(OUTPUT, 'images')
     if not os.path.exists(imgdir):
         os.mkdir(imgdir)
@@ -130,9 +103,9 @@ def download_page(item):
         imgfile = os.path.join(imgdir, to_src)
         img['src'] = os.path.join('images', to_src)
         if os.path.exists(imgfile):
-            print('image exists, skip {0}'.format(from_src))
+            print('skip image {0}'.format(from_src))
         else:
-            download_image(from_src, imgfile)
+            download_image(from_src, imgfile, id)
 
     tempfile = os.path.join(os.path.dirname(filename),
                             '{0}.tmp'.format(os.path.basename(filename)))
@@ -140,23 +113,28 @@ def download_page(item):
         # 用utf写入文件，所以html头的gb2312需要改为utf8
         content = unicode(soup).replace('charset=gb2312', 'charset=utf-8')
         f.write(content.encode('utf8'))
-    shutil.move(tempfile, filename)
-    try:
-        os.remove(tempfile)
-    except OSError:
-        pass
-    print('page saved to {0}'.format(filename))
+    safe_rename(tempfile, filename)
+    print('page saved {0}'.format(url))
 
 
 def download_pages(items):
-    pool = ThreadPool(4)
-    try:
-        pool.map(download_page, items)
-        pool.close()
-        pool.join()
-    except KeyboardInterrupt:
-        print('terminated by user.')
-        pool.terminate()
+    retry = 0
+    while retry < 100:
+        pool = ThreadPool(4)
+        try:
+            pool.map(download_page, items)
+            pool.close()
+            pool.join()
+            break
+        except KeyboardInterrupt:
+            print('download pages terminated by user, quit execution.')
+            pool.terminate()
+            break
+        except Exception, e:
+            pool.terminate()
+            retry += 1
+            print('download pages error occurred: {0}, will do {1} retrying in {2} seconds'.format(e, retry, retry * 10))
+            time.sleep(retry * 10)
 
 
 def url_to_item(link):

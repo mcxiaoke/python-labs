@@ -5,6 +5,7 @@
 from __future__ import print_function
 from bs4 import BeautifulSoup
 import requests
+from requests import exceptions
 import re
 import os
 import sys
@@ -118,26 +119,26 @@ def download_page(item):
 
 
 def download_pages(items):
-    # retry = 0
-    # while retry < 100:
-    #     pool = ThreadPool(4)
-    #     try:
-    #         pool.map(download_page, items)
-    #         pool.close()
-    #         pool.join()
-    #         break
-    #     except KeyboardInterrupt:
-    #         print('download pages terminated by user, quit execution.')
-    #         pool.terminate()
-    #         break
-        # except Exception, e:
-        #     pool.terminate()
-        #     retry += 1
-        #     print('download pages error occurred: {0}, will do {1} retrying in {2} seconds'.format(e, retry, retry * 10))
-        #     time.sleep(retry * 10)
+    retry = 0
+    while retry < 100:
+        pool = ThreadPool(4)
+        try:
+            pool.map(download_page, items)
+            pool.close()
+            pool.join()
+            break
+        except KeyboardInterrupt:
+            print('download terminated by user, quit execution.')
+            pool.terminate()
+            break
+        except exceptions.RequestException, e:
+            pool.terminate()
+            retry += 1
+            print('download error occurred: {0}, {1} retry in {2}s'.format(e, retry, retry * 10))
+            time.sleep(retry * 10)
 
-    for item in items:
-        download_page(item)
+    # for item in items:
+    #     download_page(item)
 
 
 def url_to_item(link):

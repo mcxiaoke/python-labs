@@ -59,22 +59,23 @@ def findurls(page):
 
 def safe_rename(src, dst):
     try:
-        shutil.move(tempfile, filename)
-        os.remove(file)
-    except Exception:
-        pass
+        shutil.move(src, dst)
+    except OSError, e:
+        print('{0} rename {1} to {1}'.format(e, src, dst))
+    finally:
+        if os.path.exists(src):
+            os.remove(src)
 
 
 def download_image(url, filename, id):
     print('download image for {0}: {1}'.format(id, url))
-    tempfile = os.path.join(os.path.dirname(filename),
-                            '{0}.tmp'.format(os.path.basename(filename)))
+    tempfile = '{0}.tmp'.format(filename)
     r = requests.get(url, timeout=20, headers=HEADERS)
     with open(tempfile, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
             f.write(chunk)
     safe_rename(tempfile, filename)
-    print('image saved {0}'.format(url))
+    # print('image saved {0}'.format(url))
 
 
 def download_page(item):
@@ -91,7 +92,8 @@ def download_page(item):
     r.encoding = 'gbk'
     soup = BeautifulSoup(r.text, 'html.parser')
     imgs = soup.find_all('img')
-    imgdir = os.path.join(OUTPUT, 'images')
+    img_dirname = 'images_{0}'.format(id)
+    imgdir = os.path.join(OUTPUT, img_dirname)
     if not os.path.exists(imgdir):
         os.mkdir(imgdir)
 
@@ -101,14 +103,12 @@ def download_page(item):
             from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
         to_src = from_src.replace('/', '_').replace(':', 'x')
         imgfile = os.path.join(imgdir, to_src)
-        img['src'] = os.path.join('images', to_src)
+        img['src'] = os.path.join(img_dirname, to_src)
         if os.path.exists(imgfile):
-            print('skip image {0}'.format(from_src))
+            print('skip exists image {0}'.format(from_src))
         else:
             download_image(from_src, imgfile, id)
-
-    tempfile = os.path.join(os.path.dirname(filename),
-                            '{0}.tmp'.format(os.path.basename(filename)))
+    tempfile = '{0}.tmp'.format(filename)
     with open(tempfile, 'w') as f:
         # 用utf写入文件，所以html头的gb2312需要改为utf8
         content = unicode(soup).replace('charset=gb2312', 'charset=utf-8')
@@ -118,23 +118,26 @@ def download_page(item):
 
 
 def download_pages(items):
-    retry = 0
-    while retry < 100:
-        pool = ThreadPool(4)
-        try:
-            pool.map(download_page, items)
-            pool.close()
-            pool.join()
-            break
-        except KeyboardInterrupt:
-            print('download pages terminated by user, quit execution.')
-            pool.terminate()
-            break
-        except Exception, e:
-            pool.terminate()
-            retry += 1
-            print('download pages error occurred: {0}, will do {1} retrying in {2} seconds'.format(e, retry, retry * 10))
-            time.sleep(retry * 10)
+    # retry = 0
+    # while retry < 100:
+    #     pool = ThreadPool(4)
+    #     try:
+    #         pool.map(download_page, items)
+    #         pool.close()
+    #         pool.join()
+    #         break
+    #     except KeyboardInterrupt:
+    #         print('download pages terminated by user, quit execution.')
+    #         pool.terminate()
+    #         break
+        # except Exception, e:
+        #     pool.terminate()
+        #     retry += 1
+        #     print('download pages error occurred: {0}, will do {1} retrying in {2} seconds'.format(e, retry, retry * 10))
+        #     time.sleep(retry * 10)
+
+    for item in items:
+        download_page(item)
 
 
 def url_to_item(link):

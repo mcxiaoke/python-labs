@@ -69,8 +69,11 @@ def safe_rename(src, dst):
         if os.path.exists(src):
             os.remove(src)
 
+def fix_img_url(src):
+    return src.replace('imgs.dapenti.org:88','ptimg.org:88')
 
 def download_image(url, filename, id):
+    url=fix_img_url(url)
     print('download image for {0}: {1}'.format(id, url))
     tempfile = '{0}.tmp'.format(filename)
     r = requests.get(url, timeout=20, headers=HEADERS)

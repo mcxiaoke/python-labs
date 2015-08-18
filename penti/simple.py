@@ -69,11 +69,15 @@ def safe_rename(src, dst):
         if os.path.exists(src):
             os.remove(src)
 
+
 def fix_img_url(src):
-    return src.replace('imgs.dapenti.org:88','ptimg.org:88')
+    src = src.replace('imgs.dapenti.org:88', 'ptimg.org:88')
+    src = src.replace('imgs.dapenti2.com:88', 'ptimg.org:88')
+    return src
+
 
 def download_image(url, filename, id):
-    url=fix_img_url(url)
+    url = fix_img_url(url)
     print('download image for {0}: {1}'.format(id, url))
     tempfile = '{0}.tmp'.format(filename)
     r = requests.get(url, timeout=20, headers=HEADERS)
@@ -108,6 +112,8 @@ def download_page(item):
 
     for img in imgs:
         from_src = img['src']
+        if not os.path.splitext(from_src)[1]:
+            continue
         if not from_src.startswith('http://'):
             from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
         to_src = get_safe_filename(from_src)
@@ -116,10 +122,10 @@ def download_page(item):
         if os.path.exists(imgfile):
             print('skip exists image {0}'.format(from_src))
         else:
-            iurl,iname=download_image(from_src, imgfile, id)
-            if  not iname:
+            iurl, iname = download_image(from_src, imgfile, id)
+            if not iname:
                 # 如果图片无法下载，保留原始URL
-                img['src']=from_src
+                img['src'] = from_src
     tempfile = '{0}.tmp'.format(filename)
     with open(tempfile, 'w') as f:
         # 用utf写入文件，所以html头的gb2312需要改为utf8

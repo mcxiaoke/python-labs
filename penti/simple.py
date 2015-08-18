@@ -16,13 +16,15 @@ from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
 import json
 import shutil
+from utils import get_safe_filename
 
 OUTPUT = 'output'
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.1234.0 Safari/537.36',
            'Referer': 'http://www.dapenti.com/'}
 
-url_tpl = 'http://www.dapenti.com/blog/blog.asp?subjectid=70&name=xilei&page={0}'  # page
+# page
+url_tpl = 'http://www.dapenti.com/blog/blog.asp?subjectid=70&name=xilei&page={0}'
 page_tpl = 'http://www.dapenti.com/blog/more.asp?name=xilei&id={0}'  # id
 
 urls = []
@@ -47,7 +49,7 @@ def findurls(page):
     print('fetch page ' + str(page))
     url = url_tpl.format(page)
     r = requests.get(url, timeout=20, headers=HEADERS)
-    r.encoding = 'gb2312'
+    r.encoding = 'gbk'
     soup = BeautifulSoup(r.text, 'html.parser')
     links = soup.find_all(myurl)
     if links:
@@ -72,10 +74,13 @@ def download_image(url, filename, id):
     print('download image for {0}: {1}'.format(id, url))
     tempfile = '{0}.tmp'.format(filename)
     r = requests.get(url, timeout=20, headers=HEADERS)
+    if r.status_code == 404:
+        return url, None
     with open(tempfile, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
             f.write(chunk)
     safe_rename(tempfile, filename)
+    return url, filename
     # print('image saved {0}'.format(url))
 
 
@@ -102,13 +107,16 @@ def download_page(item):
         from_src = img['src']
         if not from_src.startswith('http://'):
             from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
-        to_src = from_src.replace('/', '_').replace(':', 'x')
+        to_src = get_safe_filename(from_src)
         imgfile = os.path.join(imgdir, to_src)
         img['src'] = os.path.join(img_dirname, to_src)
         if os.path.exists(imgfile):
             print('skip exists image {0}'.format(from_src))
         else:
-            download_image(from_src, imgfile, id)
+            iurl,iname=download_image(from_src, imgfile, id)
+            if  not iname:
+                # 如果图片无法下载，保留原始URL
+                img['src']=from_src
     tempfile = '{0}.tmp'.format(filename)
     with open(tempfile, 'w') as f:
         # 用utf写入文件，所以html头的gb2312需要改为utf8
@@ -134,7 +142,8 @@ def download_pages(items):
         except exceptions.RequestException, e:
             pool.terminate()
             retry += 1
-            print('download error occurred: {0}, {1} retry in {2}s'.format(e, retry, retry * 10))
+            print('download error occurred: {0}, {1} retry in {2}s'.format(
+                e, retry, retry * 10))
             time.sleep(retry * 10)
 
     # for item in items:

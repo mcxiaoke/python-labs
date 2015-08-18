@@ -120,7 +120,7 @@ def download_page(item):
 
 def download_pages(items):
     retry = 0
-    while retry < 100:
+    while retry < 10:
         pool = ThreadPool(4)
         try:
             pool.map(download_page, items)
@@ -131,7 +131,7 @@ def download_pages(items):
             print('download terminated by user, quit execution.')
             pool.terminate()
             break
-        except exceptions.RequestException, e:
+        except Exception, e:
             pool.terminate()
             retry += 1
             print('download error occurred: {0}, {1} retry in {2}s'.format(e, retry, retry * 10))

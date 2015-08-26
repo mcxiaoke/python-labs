@@ -67,6 +67,7 @@ def find_image_urls(page_url):
     r = requests.get(page_url)
     r.encoding = 'gbk'
     soup = BeautifulSoup(r.text, 'html.parser')
+    print('process page', page_url)
     images = soup.find_all(image_url)
     return [img.get('src') for img in images]
     return filter(None, images)

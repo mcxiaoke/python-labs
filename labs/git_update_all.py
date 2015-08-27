@@ -16,13 +16,18 @@ def git_pull_all(root):
     print('process repos in dir: {0}'.format(os.path.abspath(root)))
     dirs = os.listdir(root)
     for d in dirs:
+        if d.startswith('.'):
+            continue
+        td=os.path.join(root, d)
+        if not os.path.isdir(td):
+            continue
         print('process repo:', d)
-        os.chdir(os.path.join(root, d))
+        os.chdir(td)
         if os.path.exists(os.path.join('.', '.git')):
             try:
-                subprocess.check_call('git pull origin master')
+                subprocess.check_call('git remote -v && git pull origin master',shell=True)
             except Exception, e:
-                print('unable to update repo {0}, error: {1}'.format(d, e))
+                print('unable to update repo {0}, error: {1}'.format(td, e))
         else:
             print('{} is not a git repo, skip'.format(d))
 

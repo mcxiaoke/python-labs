@@ -6,6 +6,7 @@ from __future__ import print_function, unicode_literals
 import sys
 import os
 import time
+import shutil
 import codecs
 import requests
 import tweepy
@@ -40,8 +41,11 @@ def read_list(name):
 
 
 def download_file(url, output='pics'):
-    name = url.split('/')[-1]
+    # print('url:%s, output:%s' % (url, output))
+    name = url.split('/')[-1].replace(':large', '')
+    tmpname = name + ".tmp"
     path = os.path.abspath(os.path.join(output, name))
+    tmppath = os.path.abspath(os.path.join(output, tmpname))
     if os.path.isfile(path):
         print('skip exists %s' % path)
         return path
@@ -50,9 +54,10 @@ def download_file(url, output='pics'):
         length = int(r.headers['Content-Length'])
         print('downloading %s size: %sk' % (url, length / 2014))
         if r.status_code == requests.codes.ok:
-            with open(path, 'wb') as f:
+            with open(tmppath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=4096):
                     f.write(chunk)
+            shutil.move(tmppath, path)
             print('saved to %s' % path)
             return path
     except Exception as e:
@@ -66,17 +71,32 @@ def download_files(urls, output='pics'):
         download_file(url, output)
 
 
+def download_files2(urls, output='pics'):
+    if not os.path.exists(output):
+        os.makedirs(output)
+    from multiprocessing.dummy import Pool
+    from functools import partial
+    partial_download_file = partial(download_file, output=output)
+    pool = Pool(4)
+    pool.map(partial_download_file, urls)
+    pool.close()
+    pool.join()
+
+
 def user_timeline(screen_name=None,
                   since_id=None,
                   max_id=None):
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESSS_TOKEN_KEY, ACCESS_TOKEN_SECRET)
     api = tweepy.API(auth)
-    return api.user_timeline(screen_name=screen_name,
-                             since_id=since_id,
-                             max_id=max_id,
-                             count=200,
-                             include_rts=True)
+    try:
+        return api.user_timeline(screen_name=screen_name,
+                                 since_id=since_id,
+                                 max_id=max_id,
+                                 count=200,
+                                 include_rts=True)
+    except Exception, e:
+        print("error:%s on user_timeline for %s" % (e, screen_name))
 
 
 def extract_url(s):
@@ -114,9 +134,9 @@ def process(user_id):
     urls = read_list(url_path)
     if not urls:
         urls = get_picture_urls(user_id)
-        write_list(url_path)
+        write_list(url_path, urls)
     urls = [u + ':large' for u in urls]
-    download_files(urls, output=get_path('pics_%s' % user_id))
+    download_files2(urls, output=get_path('pics_%s' % user_id))
 
 
 def get_path(path):

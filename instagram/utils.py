@@ -24,21 +24,25 @@ def read_list(name):
         return [line.rstrip('\n') for line in f]
 
 
-def download_file(url, output='files'):
+def download_file(url, output='pics'):
+    # print('url:%s, output:%s' % (url, output))
     name = url.split('/')[-1]
+    tmpname = name + ".tmp"
     path = os.path.abspath(os.path.join(output, name))
+    tmppath = os.path.abspath(os.path.join(output, tmpname))
     if os.path.isfile(path):
         print('skip exists %s' % path)
         return path
     try:
         r = requests.get(url, stream=True, headers=HEADERS)
         length = int(r.headers['Content-Length'])
-        print('downloading %s size: %sk' % (url, length / 2014))
+        print('downloading %s (%sk)' % (url, length / 2014))
         if r.status_code == requests.codes.ok:
-            with open(path, 'wb') as f:
+            with open(tmppath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=4096):
                     f.write(chunk)
-            print('saved to %s' % path)
+            shutil.move(tmppath, path)
+            #print('saved to %s' % path)
             return path
     except Exception as e:
         print("error:%s on downloading file:%s" % (e, url))
@@ -49,3 +53,15 @@ def download_files(urls, output='files'):
         os.makedirs(output)
     for url in urls:
         download_file(url, output)
+
+
+def download_files_multi(urls, output='files', pool_size=4):
+    if not os.path.exists(output):
+        os.makedirs(output)
+    from multiprocessing.dummy import Pool
+    from functools import partial
+    partial_download_file = partial(download_file, output=output)
+    pool = Pool(pool_size)
+    pool.map(partial_download_file, urls)
+    pool.close()
+    pool.join()

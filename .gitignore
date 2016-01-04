@@ -3,4 +3,7 @@
 .ropeproject
 .project
 *.dat
+*.txt
+config.py
+files/
 output/

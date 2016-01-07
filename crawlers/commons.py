@@ -70,6 +70,8 @@ def download_file(url, filename):
     safe_rename(tempfile, filename)
     return url, filename
 
+def now():
+    return time.strftime('%Y-%m-%d-%H:%M:%S')
 
 class Runner(object):
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-08-24 17:24:26
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, absolute_import
 import requests
 import json
 import os
@@ -10,7 +10,7 @@ import sys
 import hashlib
 import time
 import argparse
-from lib import commons
+import commons
 
 __version__ = '1.0.0'
 
@@ -29,7 +29,7 @@ USER_ALBUMS_URL = 'http://api.douban.com/v2/album/user_created/{0}'
 # http://www.douban.com/doulist/39822487/?sort=time&sub_type=12&start=0
 DOULIST_PAGE_URL = 'http://www.douban.com/doulist/{0}/?sort=time&sub_type=12'
 COUNT = 100
-OUTPUT = 'output'
+OUTPUT = 'output-douban'
 
 # start, count
 
@@ -67,7 +67,7 @@ def download_album_photos(album, photos):
     if not album or not photos:
         return
     dirname = os.path.join(OUTPUT, album['id'])
-    done_file = os.path.join(dirname, '.done')
+    done_file = os.path.join(dirname, 'done.0')
     if os.path.exists(done_file):
         print('跳过已存在的相册[{0}]'.format(album['title'].encode('utf8')))
         return
@@ -82,7 +82,7 @@ def download_album_photos(album, photos):
             if n:
                 print('完成下载 {0}'.format(photo))
     with open(done_file, 'w') as f:
-        f.write(utis.now())
+        f.write(commons.now())
     print('相册[{0}]的图片下载完成'.format(album['title'].encode('utf8')))
 
 

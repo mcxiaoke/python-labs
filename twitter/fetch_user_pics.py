@@ -43,25 +43,32 @@ def read_list(name):
 def download_file(url, output='pics'):
     # print('url:%s, output:%s' % (url, output))
     name = url.split('/')[-1].replace(':large', '')
-    tmpname = name + ".tmp"
     path = os.path.abspath(os.path.join(output, name))
-    tmppath = os.path.abspath(os.path.join(output, tmpname))
-    if os.path.isfile(path):
-        print('skip exists %s' % path)
-        return path
+    skippath = os.path.abspath(os.path.join(output, name + ".0"))
+    tmppath = os.path.abspath(os.path.join(output, name + ".tmp"))
+    # check file exists , check skip file exists
+    if os.path.isfile(path) or os.path.isfile(skippath):
+        # print('skip exists %s' % url)
+        return None
     try:
         r = requests.get(url, stream=True, headers=HEADERS)
         length = int(r.headers['Content-Length'])
-        print('downloading %s size: %sk' % (url, length / 2014))
+        # skip url when length < MIN_SIZE
+        if length < MIN_SIZE:
+            print('skip small %s' % url)
+            with open(skippath, 'w') as f:
+                f.write('0')
+            return None
+        print('downloading %s (%sk)' % (url, length / 2014))
         if r.status_code == requests.codes.ok:
             with open(tmppath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=4096):
                     f.write(chunk)
             shutil.move(tmppath, path)
-            print('saved to %s' % path)
+            print('downloaded: %s' % path)
             return path
     except Exception as e:
-        print("error:%s on downloading file:%s" % (e, url))
+        print("error:%s on %s" % (e, url))
 
 
 def download_files(urls, output='pics'):
@@ -116,7 +123,7 @@ def get_picture_urls(user_id, loop=10):
     urls = []
     ss = None
     max_id = None
-    for i in xrange(1, 20):
+    for i in xrange(1, loop):
         print('page:%s, max_id:%s, total:%s' % (i, max_id, len(urls)))
         ss = user_timeline(screen_name=user_id, max_id=max_id)
         if not ss:

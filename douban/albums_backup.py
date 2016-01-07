@@ -2,18 +2,22 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-08-24 17:24:26
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import requests
 import json
 import os
+import sys
 import hashlib
 import time
+import argparse
 from lib import commons
 
-DFD_EDOMAIN='aHR0cHM6Ly9mcm9kby5kb3ViYW4uY29tL2FwaQ=='
-DFD_EKEY='MGRhZDU1MWVjMGY4NGVkMDI5MDdmZjVjNDJlOGVjNzA='
-DFD_ESECRET='OWU4YmI1NGRjMzI4OGNkZg=='
-DFD_UA='YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vMi4xNC4yKDQyKSBBbmRyb2lkLzE5IGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRXICByb206bWl1aQ=='
+__version__ = '1.0.0'
+
+DFD_EDOMAIN = 'aHR0cHM6Ly9mcm9kby5kb3ViYW4uY29tL2FwaQ=='
+DFD_EKEY = 'MGRhZDU1MWVjMGY4NGVkMDI5MDdmZjVjNDJlOGVjNzA='
+DFD_ESECRET = 'OWU4YmI1NGRjMzI4OGNkZg=='
+DFD_UA = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vMi4xNC4yKDQyKSBBbmRyb2lkLzE5IGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRXICByb206bWl1aQ=='
 
 # http://requests-docs-cn.readthedocs.org/zh_CN/latest/user/quickstart.html
 API_KEY = '00a0951fbec80b0501e1bf5f3c58210f'
@@ -25,7 +29,7 @@ USER_ALBUMS_URL = 'http://api.douban.com/v2/album/user_created/{0}'
 # http://www.douban.com/doulist/39822487/?sort=time&sub_type=12&start=0
 DOULIST_PAGE_URL = 'http://www.douban.com/doulist/{0}/?sort=time&sub_type=12'
 COUNT = 100
-OUTPUT = 'output-douban-albums'
+OUTPUT = 'output'
 
 # start, count
 
@@ -87,10 +91,6 @@ def download_by_album(id):
     download_album_photos(album, photos)
 
 
-def download_by_people(userid):
-    pass
-
-
 def doulist_album_url_pattern(tag):
     return (tag.name == 'a' and tag.parent.get('class') == ['title'])
 
@@ -129,6 +129,36 @@ def download_by_doulist(id):
         download_by_album(album)
 
 
+def download_by_user(userid):
+    pass
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='Douban Album Backup v{0}'.format(__version__),
+        epilog='''https://github.com/mcxiaoke/python-labs
+        ''')
+    parser.add_argument('-a', '--album',
+                        help='Album Id')
+    parser.add_argument('-l', '--doulist',
+                        help='Doulist Id')
+    parser.add_argument('-u', '--userid',
+                        help='User Id')
+    # parser.add_argument('-o', '--output',
+    #                     help='Save Destination')
+    args = parser.parse_args()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    return args
+
 if __name__ == '__main__':
-    # download_by_album('48382379')
-    get_albums_in_doulist('39822487')
+    args = vars(parse_args())
+    if args.get('album'):
+        download_by_album(args['album'])
+    elif args.get('doulist'):
+        download_by_doulist(args['doulist'])
+    elif args.get('userid'):
+        download_by_user(args['userid'])
+    print(args)

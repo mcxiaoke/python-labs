@@ -2,7 +2,7 @@
 # @Author: mcxiaoke
 # @Date:   2016-03-07 14:37:26
 # @Last Modified by:   mcxiaoke
-# @Last Modified time: 2016-03-07 16:47:41
+# @Last Modified time: 2016-03-07 17:25:13
 from __future__ import print_function
 import codecs
 import requests
@@ -43,4 +43,4 @@ if __name__ == '__main__':
             if error_count > 5:
                 break
             time.sleep(error_count * 10)
-    write_list(finished, '%s.txt' % album)
+    write_list('%s.txt' % album, finished)

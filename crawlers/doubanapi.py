@@ -6,6 +6,7 @@ from __future__ import print_function
 import requests
 import base64
 import json
+import sys
 
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'
@@ -37,7 +38,7 @@ class ApiClient(object):
         print('[HTTP] {} {} ({}:{})'.
               format(r.request.method, r.url, r.status_code, r.reason))
 
-    def _get(self, path, params=None, **options):
+    def _get_url(self, url, params=None, **options):
         headers = {
             'User-Agent': self.ua
         }
@@ -48,13 +49,13 @@ class ApiClient(object):
         params['apikey'] = self.apikey
         params['udid'] = self.udid
         params['channel'] = 'Douban'
-        r = requests.get(host + path, params=params, headers=headers, **options)
+        r = requests.get(url, params=params, headers=headers, **options)
         log_request(r)
-        if r.status_code != 200:
+        if r.status_code >= 400:
             print(r.text)
         return r.json()
 
-    def _post(self, path, payload=None, **options):
+    def _post_url(self, url, payload=None, files=None, **options):
         headers = {
             'User-Agent': self.ua
         }
@@ -66,12 +67,19 @@ class ApiClient(object):
         params['apikey'] = self.key
         params['udid'] = self.udid
         params['channel'] = 'Douban'
-        r = requests.post(self.host + path,
-                          params=params, data=payload, headers=headers, **options)
+        r = requests.post(url,
+                          params=params, data=payload, files=files,
+                          headers=headers, **options)
         self.log_request(r)
-        if r.status_code != 200:
+        if r.status_code >= 400:
             print(r.text)
         return r.json()
+
+    def _get(self, path, params=None, **options):
+        return _get_url(self.host + path, params, options)
+
+    def _post(self, path, payload=None, **options):
+        return _get_url(self.host + path, params, options)
 
     def login(self, username, password):
         headers = {
@@ -233,8 +241,17 @@ class ApiClient(object):
         # GET /v2/group/topic/:id/comments
         return self._get('/group/topic/%s/comments' % id)
 
+    def photo_upload(self, id, image, desc=None):
+        # http://api.douban.com/v2/album/:id
+        # POST /v2/album/:id
+        # image = photo
+        url = "https://api.douban.com/v2/album/%s" % id
+        files = {'image': open(image, 'rb')}
+        payload = {'desc': desc or image}
+        return self._post_url(url, payload=payload, files=files)
+
 
 if __name__ == '__main__':
     api = ApiClient()
-    api.login('username', 'password')
+    print(api.login(sys.argv[1], sys.argv[2]))
     print(api.me())

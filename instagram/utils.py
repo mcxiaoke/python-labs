@@ -6,12 +6,16 @@ import codecs
 import os
 import sys
 import requests
+import shutil
+import time
 
-HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.1234.0 Safari/537.36',
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.1234.0 Safari/537.36',
            'Referer': 'https://google.com/'}
 
 
 def write_list(name, ls):
+    if not ls:
+        return
     with codecs.open(name, 'w', 'utf-8') as f:
         for s in ls:
             f.write(s + '\n')
@@ -24,15 +28,23 @@ def read_list(name):
         return [line.rstrip('\n') for line in f]
 
 
-def download_file(url, output='pics'):
+def download_file(media, output='output'):
     # print('url:%s, output:%s' % (url, output))
-    name = url.split('/')[-1]
+    url = media.get_standard_resolution_url().replace('/s640x640/', '/')
+    name = url.split('/')[-1].split("?ig_cache_key=")[0]
+    fname = media.created_time.strftime("%Y%m%d_%H%M%S") + "_" + name
+    print(fname)
     tmpname = name + ".tmp"
+    fpath = os.path.abspath(os.path.join(output, fname))
     path = os.path.abspath(os.path.join(output, name))
     tmppath = os.path.abspath(os.path.join(output, tmpname))
+    if os.path.isfile(fpath):
+        print('skip exists %s' % path)
+        return fpath
     if os.path.isfile(path):
         print('skip exists %s' % path)
-        return path
+        shutil.move(path,fpath)
+        return fpath
     try:
         r = requests.get(url, stream=True, headers=HEADERS)
         length = int(r.headers['Content-Length'])
@@ -41,18 +53,18 @@ def download_file(url, output='pics'):
             with open(tmppath, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=4096):
                     f.write(chunk)
-            shutil.move(tmppath, path)
+            shutil.move(tmppath, fpath)
             #print('saved to %s' % path)
-            return path
+            return fpath
     except Exception as e:
         print("error:%s on downloading file:%s" % (e, url))
 
 
-def download_files(urls, output='files'):
+def download_files(medias, output='output'):
     if not os.path.exists(output):
         os.makedirs(output)
-    for url in urls:
-        download_file(url, output)
+    for media in medias:
+        download_file(media, output)
 
 
 def download_files_multi(urls, output='files', pool_size=4):

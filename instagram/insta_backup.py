@@ -11,27 +11,32 @@ from utils import write_list, read_list, download_files
 from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, ACCESS_TOKEN
 
 
-def get_urls(user_id):
+def get_medias(user_id):
     api = InstagramAPI(access_token=ACCESS_TOKEN, client_secret=CLIENT_SECRET)
     medias, next_ = api.user_recent_media(user_id=user_id, count=100)
+    count = 0
     while next_:
         print('next: %s' % next_)
-        more_medias, next_ = api.user_recent_media(with_next_url=next_)
-        if more_medias:
-            medias.extend(more_medias)
-    urls = [media.get_standard_resolution_url() for media in medias]
-    write_list('urls_%s.txt' % user_id, urls)
-    for u in urls:
-        print(u)
+        try:
+            more_medias, next_ = api.user_recent_media(with_next_url=next_)
+            if more_medias:
+                medias.extend(more_medias)
+            time.sleep(3)
+        except Exception, e:
+            print("error:%s on get_medias:%s" % (e, next_))
+            time.sleep(10)
+    return medias
 
 
-def process(user_id):
-    print('download pics for user %s' % user_id)
-    urls = read_list('urls_%s.txt' % user_id)
-    if not urls:
-        urls = get_urls(user_id)
-        write_list('urls_%s.txt' % user_id, urls)
-    download_files(urls)
+def process(user_id, lite=False):
+    download_files(get_medias(user_id))
+
+
+def test(user_id):
+    api = InstagramAPI(access_token=ACCESS_TOKEN, client_secret=CLIENT_SECRET)
+    medias, next_ = api.user_recent_media(user_id=user_id, count=10)
+    for m in medias:
+        print(m.created_time.strftime("%Y%m%d_%H%M%S"), m.get_standard_resolution_url())
 
 
 if __name__ == '__main__':

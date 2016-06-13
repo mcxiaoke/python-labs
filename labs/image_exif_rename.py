@@ -75,52 +75,56 @@ if len(sys.argv) < 2:
     print 'Usage: python %s some_directory' % sys.argv[0]
     sys.exit(1)
 
-top = unicode(path.normcase(sys.argv[1]))
-log = codecs.open(path.join(top, 'log.txt'), 'w', 'utf-8')
-for root, dirs, files in os.walk(top):
-    for name in files:
-        _, ext = path.splitext(name)
-        if not ext or ext.lower() not in ['.jpg', '.png']:
-            continue
-        rel_path = path.join(root, name)
-        src_path = path.abspath(rel_path)
-        print "process file:", src_path
-        f = open(path.join(root, name), 'rb')
-        tags = exifread.process_file(f)
-        f.close()
-        if not tags:
-            log.write('No exif tags found for: %s\n' % rel_path)
-        '''
-        img_path = src_path
-        width_str = str(tags.get('EXIF ExifImageWidth'))
-        height_str = str(tags.get('EXIF ExifImageLength'))
-        img_w = int(width_str) if width_str and width_str.isdigit() else 0
-        img_h = int(height_str) if height_str and height_str.isdigit() else 0
-        time_str = str(tags.get('Image DateTime'))
-        img_time = datetime.strptime(
-            time_str, EXIF_DATE_TIME) if time_str else None
-        iso_str = str(tags.get('EXIF ISOSpeedRatings'))
-        print 'iso_str=%s' % iso_str
-        img_iso = int(iso_str) if iso_str and iso_str.isdigit() else 0
-        img_model = str(tags.get('Image Model'))
-        img = ImageInfo(img_path, img_w, img_h, time=img_time,
-                        iso=img_iso, model=img_model)
-        '''
-        time_str = str(tags.get('Image DateTime')) if tags else None
-        img_time = datetime.strptime(
-            time_str, EXIF_DATE_TIME) if time_str else None
-        if not img_time:
-            os.stat(src_path)
-            img_time = datetime.fromtimestamp(os.stat(src_path).st_mtime)
-            print 'no exif, using last modified time for %s' % name
-            log.write('using stat modify time for %s\n' % name)
-        dst_path = path.join(
-            root, datetime.strftime(img_time, NAME_DATE_TIME)+ext.lower())
-        if path.exists(dst_path):
-            print 'dst file exists, no need to rename, skip %s' % name
-            continue
-        os.rename(src_path, dst_path)
-        print 'renamed to', dst_path
-        log.flush()
+def main():
+    top = unicode(path.normcase(sys.argv[1]))
+    log = codecs.open(path.join(top, 'log.txt'), 'w', 'utf-8')
+    for root, dirs, files in os.walk(top):
+        for name in files:
+            _, ext = path.splitext(name)
+            if not ext or ext.lower() not in ['.jpg', '.png']:
+                continue
+            rel_path = path.join(root, name)
+            src_path = path.abspath(rel_path)
+            print "process file:", src_path
+            f = open(path.join(root, name), 'rb')
+            tags = exifread.process_file(f)
+            f.close()
+            if not tags:
+                log.write('No exif tags found for: %s\n' % rel_path)
+            '''
+            img_path = src_path
+            width_str = str(tags.get('EXIF ExifImageWidth'))
+            height_str = str(tags.get('EXIF ExifImageLength'))
+            img_w = int(width_str) if width_str and width_str.isdigit() else 0
+            img_h = int(height_str) if height_str and height_str.isdigit() else 0
+            time_str = str(tags.get('Image DateTime'))
+            img_time = datetime.strptime(
+                time_str, EXIF_DATE_TIME) if time_str else None
+            iso_str = str(tags.get('EXIF ISOSpeedRatings'))
+            print 'iso_str=%s' % iso_str
+            img_iso = int(iso_str) if iso_str and iso_str.isdigit() else 0
+            img_model = str(tags.get('Image Model'))
+            img = ImageInfo(img_path, img_w, img_h, time=img_time,
+                            iso=img_iso, model=img_model)
+            '''
+            exif_date_time_str = str(tags.get('EXIF DateTimeDigitized'))
+            if not exif_date_time_str:
+                print("exif date time not found, skip %s" % name)
+                continue
+            exif_date_time = datetime.strptime(
+                exif_date_time_str, EXIF_DATE_TIME) if time_str else None
+            if not exif_date_time:
+                print("exif date time not found, skip %s" % name)
+                continue
+            dst_path = path.join(
+                root, datetime.strftime(exif_date_time, NAME_DATE_TIME)+ext.lower())
+            if path.exists(dst_path):
+                print 'dst file exists, no need to rename, skip %s' % name
+                continue
+            os.rename(src_path, dst_path)
+            print 'renamed to', dst_path
+            log.flush()
+    log.close()
 
-log.close()
+if __name__ == '__main__':
+    main()

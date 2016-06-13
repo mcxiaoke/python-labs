@@ -14,7 +14,7 @@ from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, ACCESS_TOKEN
 def get_medias(user_id, all=False):
     api = InstagramAPI(access_token=ACCESS_TOKEN, client_secret=CLIENT_SECRET)
     medias, next_ = api.user_recent_media(user_id=user_id, count=100)
-    count = 10000 if all else 2
+    count = 10000 if all else 5
     while next_ and count > 0:
         print('next: %s' % next_)
         try:

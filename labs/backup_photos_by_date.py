@@ -89,9 +89,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 4 and sys.argv[3] == '-n':
         dry_run = True
         print("Mode: dry run mode, no files will be copied.")
-    else:
-        msg = "Are you sure to process files [y/n]? "
-        if input(msg).lower() not in ('y', 'yes'):
-            print('Cancelled.')
-            sys.exit(2)
+    # else:
+    #     msg = "Are you sure to process files [y/n]? "
+    #     if input(msg).lower() not in ('y', 'yes'):
+    #         print('Cancelled.')
+    #         sys.exit(2)
     backup(src, dst, dry_run)

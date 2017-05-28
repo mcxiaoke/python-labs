@@ -9,6 +9,13 @@ import sys
 import shutil
 import re
 
+# compat 2.x and 3.x
+
+try:
+    input = raw_input
+except Exception:
+    pass
+
 '''
 match all these names:
 
@@ -27,62 +34,64 @@ IMG_NAME_MIN_LEN = 12
 IMG_FILE_MIN_SIZE = 10*1024
 
 
-def backup(source, destination):
+def backup(source, destination, dry_run=False):
     ip = re.compile(IMG_NAME_PATTERN, re.I)
-    print('process directory:', source)
+    print('Process: {}'.format(source))
     if not os.path.isdir(source):
         return
     for name in os.listdir(source):
         current = os.path.join(source, name)
         if name[0] in '._~':
-            print('skip:', current)
+            print('Invalid: {}'.format(current))
             continue
         if os.path.isfile(current):
             # print('process file:', current)
             if len(name) < IMG_NAME_MIN_LEN:
-                print('skip:', current)
+                print('Invalid:', current)
                 continue
             pic_size = os.stat(current).st_size
             if pic_size <= IMG_FILE_MIN_SIZE:
-                print('skip:', current)
+                print('Invalid: {}'.format(current))
                 # os.remove(current)
                 continue
             m = ip.match(name)
             if m:
-                # img, year, month, day, ext
-                # print(m.group(1), m.group(2), m.group(
-                #     3), m.group(4))
+                # year, month, day, ext
+                # print(m.group(1), m.group(2), m.group(3))
                 src = current
                 output = os.path.join(destination, m.group(1), m.group(2))
-                if not os.path.exists(output):
+                if not os.path.exists(output) and not dry_run:
                     os.makedirs(output)
                 dst = os.path.join(output, name)
-                print('from:', src)
-                print('to:', dst)
                 if not os.path.exists(dst):
-                    # TODO copy file
-                    # print('Copied -> {}'.format(dst.encode('utf8')))
-                    # shutil.copy2(src,dst)
-                    pass
+                    print('Copy: {} -> {}'.format(src, dst))
+                    if not dry_run:
+                        shutil.copy2(src, dst)
                 else:
-                    print('exists:', dst)
+                    print('Exist: {}'.format(dst))
             else:
-                print('skip:', name)
+                print('Not Matched: {}'.format(name))
         elif os.path.isdir(current):
-            backup(current, destination)
+            backup(current, destination, dry_run)
         else:
-            print('not directory:', current)
+            print('Invalid: {}'.format(current))
 
 if __name__ == '__main__':
     # print(sys.argv)
-    if len(sys.argv) != 3:
-        print('Usage: {} source_dir destination_dir'.format(sys.argv[0]))
+    if len(sys.argv) < 3:
+        print('Usage: {} source_dir destination_dir -n'.format(sys.argv[0]))
         sys.exit(1)
     src = os.path.abspath(sys.argv[1])
     dst = os.path.abspath(sys.argv[2])
-    print('Source:\t\t{}'.format(src))
-    print('Destination:\t{}'.format(dst))
-    msg = "Are you sure to process files [y/n]? "
-    if raw_input(msg).lower() not in ('y', 'yes'):
-        sys.exit(2)
-    backup(src, dst)
+    print('SRC:  {}'.format(src))
+    print('DST:  {}'.format(dst))
+    dry_run = False
+    if len(sys.argv) == 4 and sys.argv[3] == '-n':
+        dry_run = True
+        print("Mode: dry run mode, no files will be copied.")
+    else:
+        msg = "Are you sure to process files [y/n]? "
+        if input(msg).lower() not in ('y', 'yes'):
+            print('Cancelled.')
+            sys.exit(2)
+    backup(src, dst, dry_run)

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# @Author: mcxiaoke
+# @Date:   2017-05-29 15:01:41
+# @Last Modified by:   mcxiaoke
+# @Last Modified time: 2017-05-29 15:01:50
 from __future__ import print_function
 import sys
 import os
@@ -19,7 +23,7 @@ print(sys.platform, sys.version_info.major,
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'djvu')
-INVALID_CHARS = u',._[]【】'
+INVALID_CHARS = u',._[]【】《》：”'
 
 processed = []
 

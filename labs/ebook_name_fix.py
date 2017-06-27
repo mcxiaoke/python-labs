@@ -3,7 +3,7 @@
 # @Author: mcxiaoke
 # @Date:   2017-05-29 15:01:41
 # @Last Modified by:   mcxiaoke
-# @Last Modified time: 2017-05-29 15:01:50
+# @Last Modified time: 2017-06-27 17:09:59
 from __future__ import print_function
 import sys
 import os
@@ -22,7 +22,7 @@ print(sys.platform, sys.version_info.major,
       sys.stdin.encoding, sys.stdout.encoding, os_encoding)
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'djvu')
+FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'.djvu', u'.txt')
 INVALID_CHARS = u',._[]【】《》：”'
 
 processed = []
@@ -90,7 +90,7 @@ def fix_name(base):
 
 def rename(curdir, name, dry_run=False):
     old_path = path.join(curdir, name)
-    # print('file: {}'.format(old_path))
+    log(u'file: {}'.format(old_path))
     base, ext = path.splitext(name)
     if not ext:
         return old_path

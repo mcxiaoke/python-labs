@@ -20,12 +20,12 @@ def process(curdir, name):
     base, ext = path.splitext(name)
     fi = path.join(curdir, name)
     fo = os.path.join(curdir, '{}.m4a'.format(base))
-    print(u'input: {}'.format(fi))
-    print(u'output: {}'.format(fo))
+    print('input: {}'.format(fi))
+    print('output: {}'.format(fo))
     # subprocess.call(["file", f])
-    if name.endswith('.py'):
-        args = "ffmpeg -i {} -c:a copy {}".format(fi, fo).split()
-        subprocess.check_call(args, stderr=subprocess.STDOUT)
+    if name.lower().endswith('.mp4') and not os.path.exists(fo):
+        args = "ffmpeg -i {} -vn -c:a copy {}".format(fi, fo).split()
+        subprocess.call(args, stderr=subprocess.STDOUT)
 
 
 def main(root):
@@ -37,8 +37,8 @@ def main(root):
 if __name__ == '__main__':
     print(sys.argv)
     if len(sys.argv) < 2:
-        print(u'Usage: {} target_dir'.format(sys.argv[0]))
+        print('Usage: {} target_dir'.format(sys.argv[0]))
         sys.exit(1)
     root = os.path.abspath(sys.argv[1])
-    print(u'Root: {}'.format(root))
+    print('Root: {}'.format(root))
     main(root)

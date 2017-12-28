@@ -43,7 +43,7 @@ def parse_ls_text(html):
         s.decompose()
     s = soup.find('div', id='centerdiv')
     title = soup.title.get_text().strip()
-    content = clean_text(s.get_text('\n')) if s else None
+    content = s.get_text('\n') if s else None
     return title, content
 
 
@@ -202,11 +202,11 @@ def download_fish_list(list_file, dst=None):
     for name in names:
         url = LS_URL.format(name)
         r = commons.get(url, encoding='utf-8', allow_redirects=False)
-        if r.status_code != 200:
-            continue
-        if not r.text:
+        if r.status_code != 200 or not r.text:
+            print(u'No match {}'.format(name))
             continue
         url = LS_INFO_URL.format(r.text)
+        # print(url)
         r = commons.get(url, encoding='utf-8',
                         allow_redirects=False)
         if r.status_code != 200:
@@ -214,6 +214,9 @@ def download_fish_list(list_file, dst=None):
         title, content = parse_ls_text(r.text)
         if title and content:
             ofile = os.path.join(dst, u'{}.txt'.format(title))
+            if os.path.exists(ofile):
+                print(u'Skip {}'.format(title))
+                continue
             with codecs.open(ofile, 'w', 'utf-8') as f:
                 print(u'Saved {}'.format(title))
                 f.write(content)

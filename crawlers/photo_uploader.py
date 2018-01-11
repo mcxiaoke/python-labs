@@ -2,7 +2,7 @@
 # @Author: mcxiaoke
 # @Date:   2016-03-07 14:37:26
 # @Last Modified by:   mcxiaoke
-# @Last Modified time: 2018-01-11 15:13:06
+# @Last Modified time: 2018-01-11 21:37:06
 from __future__ import print_function
 import codecs
 import requests
@@ -17,7 +17,11 @@ import traceback
 from doubanapi import ApiClient
 from utils import read_list, write_list
 
-from config import USERNAME, PASSWORD
+try:
+    from config import USERNAME, PASSWORD
+except Exception as e:
+    USERNAME = None
+    PASSWORD = None
 
 if __name__ == '__main__':
     print(sys.argv)
@@ -25,7 +29,17 @@ if __name__ == '__main__':
         print('Usage: python %s album_id dir' % sys.argv[0])
         exit(1)
     api = ApiClient()
-    api.login(USERNAME, PASSWORD)
+    if True or not api.is_authorized():
+        print('Please login before other operations.')
+        username = USERNAME or raw_input('Username: ')
+        password = PASSWORD or raw_input('Password: ')
+        if username and password:
+            api.login(username, password)
+        else:
+            print('Login is required, abort.')
+            exit(1)
+    if True:
+        exit(0)
     album = sys.argv[1]
     directory = sys.argv[2]
     files = os.listdir(directory)

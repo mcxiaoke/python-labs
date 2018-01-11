@@ -7,7 +7,10 @@ import requests
 import base64
 import json
 import sys
+import codecs
+import utils
 
+TOKEN_FILE = 'authorization.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'
 
@@ -22,9 +25,10 @@ UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
 
 class ApiClient(object):
 
-    def __init__(self, key=base64.b64decode(DFD_EKEY),
+    def __init__(self, host=API_DOMAIN,
+                 key=base64.b64decode(DFD_EKEY),
                  secret=base64.b64decode(DFD_ESECRET)):
-        self.host = API_DOMAIN
+        self.host = host
         self.key = key
         self.secret = secret
         self.redirect_uri = base64.b64decode(DFD_REDIRECT)
@@ -32,13 +36,30 @@ class ApiClient(object):
         self.udid = UDID
         self.id = None
         self.tk = None
-        print('host={}, apikey={}, udid={}, ua={}'
-              .format(self.host, self.key, self.udid, self.ua))
+        self._handle_token(utils.read_dict(TOKEN_FILE))
+        # print('host={}, apikey={}, udid={}, ua={}'
+        #       .format(self.host, self.key, self.udid, self.ua))
 
     def log_request(self, r):
-        #print('[HTTP] {} {} ({}:{})'.
+        # print('[HTTP] {} {} ({}:{})'.
         #      format(r.request.method, r.url, r.status_code, r.reason))
         pass
+
+    def _handle_token(self, res, http=False):
+        if res:
+            self.id = res.get('douban_user_id')
+            self.tk = res.get('access_token')
+            if self.is_authorized():
+                if http:
+                    utils.write_dict(TOKEN_FILE, res)
+                    print('login successful, token =', self.tk)
+                else:
+                    print('saved login info loaded.')
+            else:
+                print('login failed!', res)
+        else:
+            print('login info not found!')
+        return res
 
     def _get_url(self, url, params=None, **options):
         headers = {
@@ -83,6 +104,9 @@ class ApiClient(object):
     def _post(self, path, payload=None, **options):
         return _get_url(self.host + path, params, options)
 
+    def is_authorized(self):
+        return self.id and self.tk
+
     def login(self, username, password):
         headers = {
             'User-Agent': self.ua
@@ -97,20 +121,13 @@ class ApiClient(object):
         }
         r = requests.post(AUTH_TOKEN_URL, data=payload, headers=headers)
         self.log_request(r)
-        res = r.json()
-        self.id = res.get('douban_user_id')
-        self.tk = res.get('access_token')
-        if self.id:
-            print('login successful! token=', self.tk)
-        else:
-            print('login failed!', res)
-        return res
+        self._handle_token(r.json(), http=True)
 
     def me(self):
-        if self.id:
+        if self.is_authorized():
             return requests.get(API_DOMAIN + 'user/' + self.id).json()
         else:
-            print('error: unable to get self info, not logined.')
+            print('error: unable to get self info, not authorized.')
 
     def album_info(self, id):
         # GET /photo_album/:id

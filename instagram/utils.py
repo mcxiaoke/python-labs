@@ -12,6 +12,21 @@ import time
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.1234.0 Safari/537.36',
            'Referer': 'https://google.com/'}
 
+def to_dict(o):
+    d = {}
+    for n in dir(o):
+        if n.startswith('__'):
+            continue
+        v = getattr(o, n)
+        # print(type(v),v, callable(v))
+        if callable(v):
+            try:
+                d[n] = v()
+            except Exception as e:
+                pass
+        else:
+            d[n] = v
+    return d
 
 def write_list(name, ls):
     if not ls:
@@ -28,12 +43,11 @@ def read_list(name):
         return [line.rstrip('\n') for line in f]
 
 
-def download_file(media, output='output'):
-    # print('url:%s, output:%s' % (url, output))
-    url = media.get_standard_resolution_url().replace('/s640x640/', '/')
-    name = url.split('/')[-1].split("?ig_cache_key=")[0]
+def download_insta_file(media, output='output'):
+    url = media.get_standard_resolution_url().replace('s640x640/sh0.08/', '')
+    name = url.split('/')[-1]
     fname = media.created_time.strftime("%Y%m%d_%H%M%S") + "_" + name
-    print(fname)
+    #print(fname)
     tmpname = name + ".tmp"
     fpath = os.path.abspath(os.path.join(output, fname))
     path = os.path.abspath(os.path.join(output, name))
@@ -54,17 +68,19 @@ def download_file(media, output='output'):
                 for chunk in r.iter_content(chunk_size=4096):
                     f.write(chunk)
             shutil.move(tmppath, fpath)
-            #print('saved to %s' % path)
+            print('saved to %s' % path)
             return fpath
+        else:
+            print('failed: %s' % r)
     except Exception as e:
         print("error:%s on downloading file:%s" % (e, url))
 
 
-def download_files(medias, output='output'):
+def download_insta_files(medias, output='output'):
     if not os.path.exists(output):
         os.makedirs(output)
     for media in medias:
-        download_file(media, output)
+        download_insta_file(media, output)
 
 
 def download_files_multi(urls, output='files', pool_size=4):

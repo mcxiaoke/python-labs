@@ -12,22 +12,23 @@ AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'
 
 DFD_EDOMAIN = 'aHR0cHM6Ly9mcm9kby5kb3ViYW4uY29tL2FwaS92Mg=='
-DFD_EKEY = 'MGRhZDU1MWVjMGY4NGVkMDI5MDdmZjVjNDJlOGVjNzA='
-DFD_ESECRET = 'OWU4YmI1NGRjMzI4OGNkZg=='
-DFD_REDIRECT = 'ZnJvZG86Ly9hcHAvb2F1dGgvY2FsbGJhY2sv'
-DFD_EUA = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vMy4xKDUxKSBBbmRyb2lkLzE5IGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRXICByb206bWl1aTY='
-UDID = '4878fd734881de360ab0bb5ef2fce501cbed296c'
+DFD_EKEY = 'MDdjNzg3ODJkYjAwYTEyMTE3NTY5Njg4OTEwMWUzNjM='
+DFD_ESECRET = 'OTgxZGE5YjA5ODg3ZjEzZg=='
+DFD_REDIRECT = 'aHR0cHM6Ly93d3cuZG91YmFuLmNvbS9hY2NvdW50cy9hdXRoMl9yZWRpcj91cmw9aHR0cDovL3NodW8uZG91YmFuLmNvbS8hc2VydmljZS9hbmRyb2lkJmFwaWtleT0gMDdjNzg3ODJkYjAwYTEyMTE3NTY5Njg4OTEwMWUzNjM='
+DFD_EUA_FRODO = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vNS4xOC4wLjAoOTgpIEFuZHJvaWQvMjEgY2FuY3JvX3djX2x0ZSBYaWFvbWkgTUkgNFcgIHJvbTptaXVpNg=='
+DFD_EUA_SHUO = 'YXBpLWNsaWVudC8yLjMuMCBjb20uZG91YmFuLnNodW8vMi4yLjUoMTIxKSBBbmRyb2lkLzIxIGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRX'
+UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
 
 
 class ApiClient(object):
 
     def __init__(self, key=base64.b64decode(DFD_EKEY),
                  secret=base64.b64decode(DFD_ESECRET)):
-        self.host = base64.b64decode(DFD_EDOMAIN)
+        self.host = API_DOMAIN
         self.key = key
         self.secret = secret
         self.redirect_uri = base64.b64decode(DFD_REDIRECT)
-        self.ua = base64.b64decode(DFD_EUA)
+        self.ua = base64.b64decode(DFD_EUA_SHUO)
         self.udid = UDID
         self.id = None
         self.tk = None
@@ -35,8 +36,9 @@ class ApiClient(object):
               .format(self.host, self.key, self.udid, self.ua))
 
     def log_request(self, r):
-        print('[HTTP] {} {} ({}:{})'.
-              format(r.request.method, r.url, r.status_code, r.reason))
+        #print('[HTTP] {} {} ({}:{})'.
+        #      format(r.request.method, r.url, r.status_code, r.reason))
+        pass
 
     def _get_url(self, url, params=None, **options):
         headers = {

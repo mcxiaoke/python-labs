@@ -10,6 +10,7 @@ import codecs
 import re
 import string
 import shutil
+import shlex
 import subprocess
 from os import path
 
@@ -19,12 +20,12 @@ def process(curdir, name):
     # subprocess.check_output(["echo", "Hello World!"])
     base, ext = path.splitext(name)
     fi = path.join(curdir, name)
-    fo = os.path.join(curdir, '{}.m4a'.format(base))
+    fo = os.path.join(curdir, '{}.wma'.format(base))
     print('input: {}'.format(fi))
     print('output: {}'.format(fo))
     # subprocess.call(["file", f])
-    if name.lower().endswith('.mp4') and not os.path.exists(fo):
-        args = "ffmpeg -i {} -vn -c:a copy {}".format(fi, fo).split()
+    if name.lower().endswith('.wmv') and not os.path.exists(fo):
+        args = shlex.split("ffmpeg -i {} -vn -c:a copy {}".format(fi, fo))
         subprocess.call(args, stderr=subprocess.STDOUT)
 
 

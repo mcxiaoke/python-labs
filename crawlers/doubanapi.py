@@ -7,36 +7,59 @@ import requests
 import base64
 import json
 import sys
+import codecs
+import utils
 
+TOKEN_FILE = 'authorization.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'
 
 DFD_EDOMAIN = 'aHR0cHM6Ly9mcm9kby5kb3ViYW4uY29tL2FwaS92Mg=='
-DFD_EKEY = 'MGRhZDU1MWVjMGY4NGVkMDI5MDdmZjVjNDJlOGVjNzA='
-DFD_ESECRET = 'OWU4YmI1NGRjMzI4OGNkZg=='
-DFD_REDIRECT = 'ZnJvZG86Ly9hcHAvb2F1dGgvY2FsbGJhY2sv'
-DFD_EUA = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vMy4xKDUxKSBBbmRyb2lkLzE5IGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRXICByb206bWl1aTY='
-UDID = '4878fd734881de360ab0bb5ef2fce501cbed296c'
+DFD_EKEY = 'MDdjNzg3ODJkYjAwYTEyMTE3NTY5Njg4OTEwMWUzNjM='
+DFD_ESECRET = 'OTgxZGE5YjA5ODg3ZjEzZg=='
+DFD_REDIRECT = 'aHR0cHM6Ly93d3cuZG91YmFuLmNvbS9hY2NvdW50cy9hdXRoMl9yZWRpcj91cmw9aHR0cDovL3NodW8uZG91YmFuLmNvbS8hc2VydmljZS9hbmRyb2lkJmFwaWtleT0gMDdjNzg3ODJkYjAwYTEyMTE3NTY5Njg4OTEwMWUzNjM='
+DFD_EUA_FRODO = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vNS4xOC4wLjAoOTgpIEFuZHJvaWQvMjEgY2FuY3JvX3djX2x0ZSBYaWFvbWkgTUkgNFcgIHJvbTptaXVpNg=='
+DFD_EUA_SHUO = 'YXBpLWNsaWVudC8yLjMuMCBjb20uZG91YmFuLnNodW8vMi4yLjUoMTIxKSBBbmRyb2lkLzIxIGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRX'
+UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
 
 
 class ApiClient(object):
 
-    def __init__(self, key=base64.b64decode(DFD_EKEY),
+    def __init__(self, host=API_DOMAIN,
+                 key=base64.b64decode(DFD_EKEY),
                  secret=base64.b64decode(DFD_ESECRET)):
-        self.host = base64.b64decode(DFD_EDOMAIN)
+        self.host = host
         self.key = key
         self.secret = secret
         self.redirect_uri = base64.b64decode(DFD_REDIRECT)
-        self.ua = base64.b64decode(DFD_EUA)
+        self.ua = base64.b64decode(DFD_EUA_SHUO)
         self.udid = UDID
         self.id = None
         self.tk = None
-        print('host={}, apikey={}, udid={}, ua={}'
-              .format(self.host, self.key, self.udid, self.ua))
+        self._handle_token(utils.read_dict(TOKEN_FILE))
+        # print('host={}, apikey={}, udid={}, ua={}'
+        #       .format(self.host, self.key, self.udid, self.ua))
 
     def log_request(self, r):
-        print('[HTTP] {} {} ({}:{})'.
-              format(r.request.method, r.url, r.status_code, r.reason))
+        # print('[HTTP] {} {} ({}:{})'.
+        #      format(r.request.method, r.url, r.status_code, r.reason))
+        pass
+
+    def _handle_token(self, res, http=False):
+        if res:
+            self.id = res.get('douban_user_id')
+            self.tk = res.get('access_token')
+            if self.is_authorized():
+                if http:
+                    utils.write_dict(TOKEN_FILE, res)
+                    print('login successful, token =', self.tk)
+                else:
+                    print('saved login info loaded.')
+            else:
+                print('login failed!', res)
+        else:
+            print('login info not found!')
+        return res
 
     def _get_url(self, url, params=None, **options):
         headers = {
@@ -81,6 +104,9 @@ class ApiClient(object):
     def _post(self, path, payload=None, **options):
         return _get_url(self.host + path, params, options)
 
+    def is_authorized(self):
+        return self.id and self.tk
+
     def login(self, username, password):
         headers = {
             'User-Agent': self.ua
@@ -95,20 +121,13 @@ class ApiClient(object):
         }
         r = requests.post(AUTH_TOKEN_URL, data=payload, headers=headers)
         self.log_request(r)
-        res = r.json()
-        self.id = res.get('douban_user_id')
-        self.tk = res.get('access_token')
-        if self.id:
-            print('login successful! token=', self.tk)
-        else:
-            print('login failed!', res)
-        return res
+        self._handle_token(r.json(), http=True)
 
     def me(self):
-        if self.id:
+        if self.is_authorized():
             return requests.get(API_DOMAIN + 'user/' + self.id).json()
         else:
-            print('error: unable to get self info, not logined.')
+            print('error: unable to get self info, not authorized.')
 
     def album_info(self, id):
         # GET /photo_album/:id

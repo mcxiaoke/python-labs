@@ -150,7 +150,7 @@ def remove_cjk(root, dry_run=False):
         for name in filenames:
             if contains_cjk(name):
                 log(u'Delete {}'.format(name))
-                os.remove(os.path.join(curdir,name))
+                #os.remove(os.path.join(curdir,name))
 
 if __name__ == '__main__':
     print(sys.argv)

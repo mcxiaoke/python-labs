@@ -13,55 +13,26 @@ import os
 import time
 import shutil
 import random
+import argparse
 import traceback
-from doubanapi import ApiClient
-from utils import read_list, write_list
+from doubanutils import api,upload_photos_to_album
 
-try:
-    from config import USERNAME, PASSWORD
-except Exception as e:
-    USERNAME = None
-    PASSWORD = None
+TEST_ALBUM_ID = '1657031875'
 
-if __name__ == '__main__':
+def upload_photos():
     print(sys.argv)
     if len(sys.argv) < 3:
-        print('Usage: python %s album_id dir' % sys.argv[0])
+        print('Usage: %s album_id photos_dir' % sys.argv[0])
         exit(1)
-    api = ApiClient()
-    if True or not api.is_authorized():
-        print('Please login before other operations.')
-        username = USERNAME or raw_input('Username: ')
-        password = PASSWORD or raw_input('Password: ')
-        if username and password:
-            api.login(username, password)
-        else:
-            print('Login is required, abort.')
-            exit(1)
-    if True:
-        exit(0)
-    album = sys.argv[1]
-    directory = sys.argv[2]
-    files = os.listdir(directory)
-    done_file = os.path.join(directory, '%s_done.txt' % album)
-    finished = read_list(done_file)
-    error_count = 0
-    for f in files:
-        image = os.path.join(directory, f)
-        try:
-            if f not in finished:
-                print('Uploading %s' % image)
-                api.photo_upload(album, image, f)
-                finished.append(f)
-                write_list(done_file, finished)
-                time.sleep(random.randint(1, 3))
-            else:
-                print('Skip %s' % image)
-        except Exception, e:
-            print("Error:%s On uploading :%s" % (e, image))
-            traceback.print_exc()
-            error_count += 1
-            if error_count > 5:
-                break
-            time.sleep(error_count * 10)
-    write_list(done_file, finished)
+    album_id = sys.argv[1]
+    photos = os.path.abspath(sys.argv[2])
+    upload_photos_to_album(album_id, photos)
+
+def main():
+    api.debug = True
+    api.me()
+    upload_photos()
+
+
+if __name__ == '__main__':
+    main()

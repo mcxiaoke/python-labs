@@ -18,14 +18,22 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 DEFAULT_TIMEOUT = 30
 FILENAME_UNSAFE_CHARS = '/\\<>:?*"|'
-USER_AGENT_DEAULT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'
+USER_AGENT_OSX = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
+USER_AGENT_WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36 Edge/15.15063'
+USER_AGENT_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_2 like Mac OS X) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0 Mobile/15C202 Safari/604.1'
+
+is_mobile = False
+
+
+def get_user_agent():
+    return USER_AGENT_MOBILE if is_mobile else USER_AGENT_WIN
 
 
 def get_headers(url):
     headers = {}
     u = urlparse(url)
     headers['Referer'] = '{0}://{1}/'.format(u.scheme, u.netloc)
-    headers['User-Agent'] = USER_AGENT_DEAULT
+    headers['User-Agent'] = get_user_agent()
     return headers
 
 
@@ -48,7 +56,8 @@ def safe_rename(src, dst):
 
 
 def get(url, encoding=None, **options):
-    r = requests.get(url, timeout=DEFAULT_TIMEOUT, headers=get_headers(url), **options)
+    r = requests.get(url, timeout=DEFAULT_TIMEOUT,
+                     headers=get_headers(url), **options)
     if encoding:
         r.encoding = encoding
     return r
@@ -56,7 +65,12 @@ def get(url, encoding=None, **options):
 
 def soup(url, encoding=None):
     r = get(url, encoding)
-    return BeautifulSoup(r.text, 'html.parser')
+    soup =  BeautifulSoup(r.text, 'html.parser')
+    for s in soup('script'):
+        s.decompose()
+    for s in soup('style'):
+        s.decompose()
+    return soup
 
 
 def download_file(url, filename):
@@ -70,8 +84,10 @@ def download_file(url, filename):
     safe_rename(tempfile, filename)
     return url, filename
 
+
 def now():
     return time.strftime('%Y-%m-%d-%H:%M:%S')
+
 
 class Runner(object):
 

@@ -9,7 +9,9 @@ __pycache__/
 *.json
 *.csv
 *.zip
+*.epub
 *.rar
+*.html
 config.py
 config.json
 config.yaml
@@ -19,6 +21,9 @@ pictures/
 files/
 output/
 output*/
+temp/
+tmp/
+test/
 
 .idea/
 .ropeproject/

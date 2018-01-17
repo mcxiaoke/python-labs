@@ -8,6 +8,7 @@ import codecs
 import os
 import sys
 import urllib
+import urlparse
 import requests
 import shutil
 import time
@@ -15,12 +16,22 @@ import json
 import collections
 import configparser
 
+def import_src(name, fpath):
+    import os, imp
+    p = fpath if os.path.isabs(fpath) \
+        else os.path.join(os.path.dirname(__file__), fpath)
+    return imp.load_source(name, p)
 
 def distinct_list(source_list, sort=False, reverse=False):
     result_list = collections.OrderedDict(
         (x, True) for x in source_list).keys()
     return sorted(result_list, reverse=reverse) if sort else result_list
 
+def url_filename(url):
+    # return urlparse.urlparse(url).path
+    if  url.endswith('/'):
+        url = url[:-1]
+    return url.split('/')[-1]
 
 def unquote_url(url):
     if isinstance(url, unicode):

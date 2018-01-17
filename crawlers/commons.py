@@ -7,6 +7,7 @@ import requests
 import json
 import shutil
 import sys
+import signal
 import os
 import traceback
 import time
@@ -23,6 +24,7 @@ class HTTPError(Exception):
         super(HTTPError, self).__init__(message)
         # Now for your custom code...
         self.code = code
+
 
 DEFAULT_TIMEOUT = 30
 FILENAME_UNSAFE_CHARS = '/\\<>:?*"|'
@@ -98,35 +100,38 @@ def download_file(url, filename):
 def now():
     return time.strftime('%Y-%m-%d-%H:%M:%S')
 
+def initializer():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-class Runner(object):
+class MultiTask(object):
 
-    def __init__(self, func, args, pool_size=4, retry=sys.maxint, sleep=60):
+    def __init__(self, func, args, pool_size=8, retry=1, sleep=60):
         self.func = func
         self.args = args
         self.pool_size = pool_size
         self.retry = retry
         self.sleep = sleep
+        # initializer only for multi process, not thread
+        self.pool = Pool(self.pool_size, initializer)
 
     def start(self):
         while self.retry > 0:
-            pool = ThreadPool(self.pool_size)
             try:
-                pool.map(self.func, self.args)
-                pool.close()
-                pool.join()
-                print('task execution completely.')
+                self.pool.map_async(self.func, self.args).get(999999)
+                self.pool.close()
+                self.pool.join()
+                print('Task execution completely.')
                 break
             except KeyboardInterrupt, e:
-                print('task terminated by user.', e)
-                pool.terminate()
-                pool.join()
+                print('Task terminated by user.', e)
+                self.pool.terminate()
                 break
             except Exception, e:
-                pool.terminate()
-                pool.join()
+                self.pool.terminate()
                 self.retry -= 1
-                traceback.print_exc()
-                print('task error: {0}, {1} retry in {2}s'.format(
-                    e, sys.maxint - self.retry, 60))
+                # traceback.print_exc()
+                print('Task error: {0}, {1} retry in {2}s'.format(
+                    e, sys.maxint - self.retry, sleep))
                 time.sleep(self.sleep)
+            finally:
+                self.pool.join()

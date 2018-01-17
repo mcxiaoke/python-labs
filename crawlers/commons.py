@@ -16,6 +16,14 @@ from urlparse import urlparse
 from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
 
+
+class HTTPError(Exception):
+    def __init__(self, message, code):
+        # Call the base class constructor with the parameters it needs
+        super(HTTPError, self).__init__(message)
+        # Now for your custom code...
+        self.code = code
+
 DEFAULT_TIMEOUT = 30
 FILENAME_UNSAFE_CHARS = '/\\<>:?*"|'
 USER_AGENT_OSX = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
@@ -60,12 +68,14 @@ def get(url, encoding=None, **options):
                      headers=get_headers(url), **options)
     if encoding:
         r.encoding = encoding
+    if r.status_code >= 400:
+        raise IOError("HTTP Status Code %s" % r.status_code)
     return r
 
 
 def soup(url, encoding=None):
     r = get(url, encoding)
-    soup =  BeautifulSoup(r.text, 'html.parser')
+    soup = BeautifulSoup(r.text, 'html.parser')
     for s in soup('script'):
         s.decompose()
     for s in soup('style'):

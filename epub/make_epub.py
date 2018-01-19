@@ -16,10 +16,9 @@ import traceback
 import textwrap
 import pypub
 
-CHAPTER_TEMPLATE = 'chapter.xhtml'
+CHAPTER_TEMPLATE = 'resources/chapter.xhtml'
 
-
-def create_chapter(text_file, dst=None):
+def create_html_from_text(text_file, dst=None):
     if not isinstance(text_file, unicode):
         text_file = text_file.decode('utf-8')
     output = dst or os.path.dirname(text_file)
@@ -28,35 +27,51 @@ def create_chapter(text_file, dst=None):
         os.makedirs(output)
     filename = os.path.basename(text_file)
     name, ext = os.path.splitext(filename)
-    text_lines = read_list(text_file)
-    text_lines = ['<p>%s</p>' % line for line in text_lines]
-    text_str = '\n'.join(text_lines)
-    html_tpl = read_file(CHAPTER_TEMPLATE)
-    html_str = html_tpl.format(name, text_str)
     html_file = os.path.join(output, '%s.html' % name)
-    write_file(html_file, html_str)
-    print('create_chapter to %s' % html_file)
-    return pypub.create_chapter_from_file(html_file, title=name)
+    if os.path.exists(html_file):
+        return html_file, name
+    else:
+        text_lines = read_list(text_file)
+        text_lines = ['<p>%s</p>' % line for line in text_lines]
+        # first line as title, h2
+        body_str = '\n'.join(text_lines)
+        html_tpl = read_file(CHAPTER_TEMPLATE)
+        html_str = html_tpl.format(name, name, body_str)
+        write_file(html_file, html_str)
+        print('create_chapter to %s' % html_file)
+        return html_file, name
 
 
 def create_epub(src, dst):
-    epub = pypub.Epub(u'中文标题测试', creator=u'mcxiaoke',
-                      language=u'cn', rights=u'Nothing', publisher=u'Cat Public')
+    import pypub
+    book = pypub.Epub(u'ePub Book', creator=u'test',
+                      language=u'cn', rights=u'test', 
+                      publisher=u'test',)
     count = 0
+    html_files = []
     for name in os.listdir(src):
         f = os.path.join(src, name)
-        chapter = create_chapter(f, dst)
-        epub.add_chapter(chapter)
+        html_files.append(create_html_from_text(f, dst))
         count += 1
-        if count > 10:
+        if count > 3:
             break
-    epub.create_epub('.', epub_name='test-epub')
+    
+    for file,title in html_files:
+        book.add_chapter(pypub.create_chapter_from_file(file, title))
+    # book.add_chapter(pypub.create_chapter_from_url('https://www.zhihu.com/question/19991740/answer/141072770'))
+    # book.add_chapter(pypub.create_chapter_from_url('https://baike.baidu.com/item/%E7%8C%AB%E5%92%AA'))
+    # book.add_chapter(pypub.create_chapter_from_url('https://www.douban.com/review/9080557/'))
+    # book.add_chapter(pypub.create_chapter_from_url('http://www.cnblogs.com/vamei/archive/2012/09/13/2682778.html'))
+    book.add_chapter(pypub.create_chapter_from_url('https://www.douban.com/note/654068918/'))
+    book.create_epub(os.path.dirname(dst),
+                     epub_name='test')
 
 
 def main():
     src = sys.argv[1]
-    dst = 'temp'
+    dst = os.path.expanduser('~/Downloads/epub_temp')
     create_epub(src, dst)
+    # os.popen('open %s' % os.path.dirname(dst))
 
 
 if __name__ == '__main__':

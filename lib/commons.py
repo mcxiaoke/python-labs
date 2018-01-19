@@ -70,6 +70,8 @@ def get(url, encoding=None, **options):
                      headers=get_headers(url), **options)
     if encoding:
         r.encoding = encoding
+    else:
+        r.encoding = 'utf-8'
     if r.status_code >= 400:
         raise IOError("HTTP Status Code %s" % r.status_code)
     return r

@@ -10,6 +10,8 @@ __pycache__/
 *.csv
 *.zip
 *.rar
+*.bak
+
 config.py
 config.json
 config.yaml

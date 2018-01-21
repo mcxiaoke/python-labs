@@ -7,10 +7,11 @@ import requests
 import base64
 import json
 import sys
+import os
 import codecs
 import utils
 
-TOKEN_FILE = 'authorization.dat'
+TOKEN_FILENAME = '.douban.token.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'
 
@@ -23,11 +24,28 @@ DFD_EUA_SHUO = 'YXBpLWNsaWVudC8yLjMuMCBjb20uZG91YmFuLnNodW8vMi4yLjUoMTIxKSBBbmRy
 UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
 
 
+def need_login(func):
+    def wrapper(*args, **kwargs):
+        #print('args - ',args)
+        #print('kwargs - ',kwargs)
+        obj = args[0]
+        if not obj.is_authorized():
+            print("method '%s' need login!" % func.__name__)
+            obj.check_login()
+        if not obj.is_authorized():
+            print("method '%s' need login, abort!" % func.__name__)
+            exit(233)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 class ApiClient(object):
 
     def __init__(self, host=API_DOMAIN,
                  key=base64.b64decode(DFD_EKEY),
                  secret=base64.b64decode(DFD_ESECRET)):
+        self.debug = False
         self.host = host
         self.key = key
         self.secret = secret
@@ -36,81 +54,108 @@ class ApiClient(object):
         self.udid = UDID
         self.id = None
         self.tk = None
-        self._handle_token(utils.read_dict(TOKEN_FILE))
-        # print('host={}, apikey={}, udid={}, ua={}'
+        self._read_token()
+        # print('ApiClient() host={}, apikey={}, udid={}, ua={}'
         #       .format(self.host, self.key, self.udid, self.ua))
+        if self.is_authorized():
+            self._log_print('ApiClient(%s, %s)' % (self.id, self.tk))
+        else:
+            self._log_print('ApiClient()')
+
+    def _read_token(self):
+        token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
+        if os.path.exists(token_file):
+            res = utils.read_dict(token_file)
+            if res:
+                self.id = res.get('douban_user_id')
+                self.tk = res.get('access_token')
+                return self.is_authorized()
+
+    def _write_token(self, res):
+        if self.is_authorized() and res:
+            token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
+            utils.write_dict(token_file, res)
+            return True
+
+    def check_login(self):
+        if not self.is_authorized():
+            try:
+                from config import USERNAME, PASSWORD
+            except Exception as e:
+                USERNAME = None
+                PASSWORD = None
+            username = USERNAME or raw_input('Username: ')
+            password = PASSWORD or raw_input('Password: ')
+            if username and password:
+                print('login using %s:%s' % (username, password))
+                self.login(username, password)
+            if self.is_authorized():
+                print('login successful, continue.')
+            else:
+                print('login failed, abort.')
+                exit(2)
+        else:
+            print('already logged in.')
+
+    def logout(self):
+        self.id = None
+        self.tk = None
+        token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
+        if os.path.exists(token_file):
+            os.remove(token_file)
+
+    def _log_print(self, message):
+        if self.debug:
+            print(message)
 
     def log_request(self, r):
-        # print('[HTTP] {} {} ({}:{})'.
-        #      format(r.request.method, r.url, r.status_code, r.reason))
-        pass
-
-    def _handle_token(self, res, http=False):
-        if res:
-            self.id = res.get('douban_user_id')
-            self.tk = res.get('access_token')
-            if self.is_authorized():
-                if http:
-                    utils.write_dict(TOKEN_FILE, res)
-                    print('login successful, token =', self.tk)
-                else:
-                    print('saved login info loaded.')
-            else:
-                print('login failed!', res)
-        else:
-            print('login info not found!')
-        return res
+        self._log_print('[Request] {}'.format(utils.requests_to_curl(r)))
+        self._log_print('[Response] {} {} ({}:{})'.
+                        format(r.request.method, r.url, r.status_code, r.reason))
 
     def _get_url(self, url, params=None, **options):
         headers = {
             'User-Agent': self.ua
         }
-        if self.id and self.tk:
+        if self.is_authorized():
             headers['Authorization'] = 'Bearer {0}'.format(self.tk)
         if not params:
             params = {}
-        params['apikey'] = self.apikey
+        params['apikey'] = self.key
         params['udid'] = self.udid
-        params['channel'] = 'Douban'
         r = requests.get(url, params=params, headers=headers, **options)
-        log_request(r)
+        self.log_request(r)
         if r.status_code >= 400:
             print(r.text)
         return r.json()
 
-    def _post_url(self, url, payload=None, files=None, **options):
+    def _post_url(self, url, params=None, **options):
         headers = {
             'User-Agent': self.ua
         }
-        if self.id and self.tk:
+        if self.is_authorized():
             headers['Authorization'] = 'Bearer {0}'.format(self.tk)
-        if not payload:
-            payload = {}
-        params = {}
+        if not params:
+            params = {}
         params['apikey'] = self.key
         params['udid'] = self.udid
-        params['channel'] = 'Douban'
         r = requests.post(url,
-                          params=params, data=payload, files=files,
-                          headers=headers, **options)
+                          params=params, headers=headers, **options)
         self.log_request(r)
         if r.status_code >= 400:
             print(r.text)
         return r.json()
 
     def _get(self, path, params=None, **options):
-        return _get_url(self.host + path, params, options)
+        return self._get_url(self.host + path, params, **options)
 
-    def _post(self, path, payload=None, **options):
-        return _get_url(self.host + path, params, options)
+    def _post(self, path, params=None, **options):
+        return self._post_url(self.host + path, params, **options)
 
     def is_authorized(self):
         return self.id and self.tk
 
     def login(self, username, password):
-        headers = {
-            'User-Agent': self.ua
-        }
         payload = {
             'client_id': self.key,
             'client_secret': self.secret,
@@ -119,24 +164,26 @@ class ApiClient(object):
             'username': username,
             'password': password
         }
-        r = requests.post(AUTH_TOKEN_URL, data=payload, headers=headers)
-        self.log_request(r)
-        self._handle_token(r.json(), http=True)
+        res = self._post_url(AUTH_TOKEN_URL, payload=payload)
+        if res:
+            self.id = res.get('douban_user_id')
+            self.tk = res.get('access_token')
+            self._write_token(res)
 
+    @need_login
     def me(self):
-        if self.is_authorized():
-            return requests.get(API_DOMAIN + 'user/' + self.id).json()
-        else:
-            print('error: unable to get self info, not authorized.')
+        return self._get('/user/~me')
 
     def album_info(self, id):
         # GET /photo_album/:id
         return self._get('/photo_album/%s' % id)
 
+    @need_login
     def album_like(self, id):
         # POST/photo_album/:id/like
         return self._post('/photo_album/%s/like' % id)
 
+    @need_login
     def album_unlike(self, id):
         # POST /photo_album/:id/unlike
         return self._post('/photo_album/%s/unlike' % id)
@@ -156,6 +203,7 @@ class ApiClient(object):
         params = {'start': start, 'count': count}
         return self._get('/user/%s/notes' % id, params)
 
+    @need_login
     def user_likes(self, id, cat, start=0, count=20):
         # GET /v2/user/:id/likes
         # cat ’all’, ‘note’, ‘photo_album’, ‘photo’, ‘online’, ‘topic’, ‘experience’, ‘dongxi’
@@ -172,10 +220,15 @@ class ApiClient(object):
         params = {'type': type, 'start': start, 'count': count}
         return self._get('/user/%s/collect_items' % id, params=params)
 
+    def user_info(self, id):
+        return self._get('/user/%s' % id)
+
+    @need_login
     def user_follow(self, id):
         # POST /v2/user/:id/follow
         return self._post('/user/%s/follow' % id)
 
+    @need_login
     def user_unfollow(self, id):
         # POST /v2/user/:id/unfollow
         return self._post('/user/%s/unfollow' % id)
@@ -193,7 +246,7 @@ class ApiClient(object):
     def user_timeline(self, id, since_id=None, max_id=None):
         # GET /lifestream/user_timeline/
         params = {'since_id': since_id, 'max_id': max_id}
-        r = requests.get(API_DOMAIN + '/lifestream/user_timeline/%s' % s, params=params)
+        r = self._get('/lifestream/user_timeline/%s' % s, params=params)
         return r.json()
 
     def movie_info(self, id):
@@ -220,6 +273,7 @@ class ApiClient(object):
         # GET /v2/doulist/:name/items start count
         return self._get('/doulist/%s/items' % id)
 
+    @need_login
     def doulist_add(self, id, foreign_type, foreign_item_id, comment=None):
         # POST /v2/doulist/:id/add_item
         # foreign_type
@@ -230,14 +284,17 @@ class ApiClient(object):
                    'comment': comment}
         return self._post('/doulist/%s/add_item' % id, data=payload)
 
+    @need_login
     def doulist_follow(self, id):
         # POST /v2/doulist/:name/follow
         return self._post('/doulist/%s/follow' % id)
 
+    @need_login
     def doulist_unfollow(self, id):
         # POST /v2/doulist/:name/unfollow
         return self._post('/doulist/%s/unfollow' % id)
 
+    @need_login
     def doulist_create(self, title, desc=None, tags=None):
         # POST /v2/doulist/create
         # title, desc, tags
@@ -260,17 +317,18 @@ class ApiClient(object):
         # GET /v2/group/topic/:id/comments
         return self._get('/group/topic/%s/comments' % id)
 
+    @need_login
     def photo_upload(self, id, image, desc=None):
-        # http://api.douban.com/v2/album/:id
         # POST /v2/album/:id
         # image = photo
-        url = "https://api.douban.com/v2/album/%s" % id
         files = {'image': open(image, 'rb')}
         payload = {'desc': desc or image}
-        return self._post_url(url, payload=payload, files=files)
+        return self._post('/album/%s' % id, data=payload, files=files)
 
 
 if __name__ == '__main__':
     api = ApiClient()
-    print(api.login(sys.argv[1], sys.argv[2]))
-    print(api.me())
+    if api.is_authorized():
+        print(api.me())
+    else:
+        print(api.user_info('1000001'))

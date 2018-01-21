@@ -8,7 +8,11 @@ __pycache__/
 *.txt
 *.json
 *.csv
+*.zip
+*.rar
 config.py
+config.json
+config.yaml
 
 # output
 pictures/

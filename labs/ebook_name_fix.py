@@ -140,6 +140,18 @@ def main(root, dry_run=False):
         f.flush()
 
 
+def contains_cjk(text):
+    cjk_pattern = re.compile(u'[\u4e00-\u9fa5]+')
+    return cjk_pattern.search(text)
+ 
+def remove_cjk(root, dry_run=False):
+    for curdir, subdirs, filenames in os.walk(root, topdown=True):
+        print(u'-- {} --'.format(curdir))
+        for name in filenames:
+            if contains_cjk(name):
+                log(u'Delete {}'.format(name))
+                os.remove(os.path.join(curdir,name))
+
 if __name__ == '__main__':
     print(sys.argv)
     if len(sys.argv) < 2:
@@ -153,4 +165,4 @@ if __name__ == '__main__':
     if PY2:
         root = root.decode(os_encoding)
     log(u'Root: {}'.format(root))
-    main(root, dry_run)
+    remove_cjk(root, dry_run)

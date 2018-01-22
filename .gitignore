@@ -12,6 +12,9 @@ __pycache__/
 *.epub
 *.rar
 *.html
+*.bak
+
+>>>>>>> 4b8f55fbb15208f99c9450b826a1809e85518a71
 config.py
 config.json
 config.yaml

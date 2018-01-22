@@ -10,6 +10,7 @@ import codecs
 import re
 import string
 import shutil
+import shlex
 import subprocess
 from os import path
 
@@ -28,7 +29,7 @@ def process(curdir, name):
     # subprocess.check_output(["echo", "Hello World!"])
     base, ext = path.splitext(name)
     fi = path.join(curdir, name)
-    fo = os.path.join(curdir, '{}.m4a'.format(base))
+    fo = os.path.join(curdir, '{}.wma'.format(base))
     print('input: {}'.format(fi))
     if ext.lower() not in VIDEO_FORMATS:
         return

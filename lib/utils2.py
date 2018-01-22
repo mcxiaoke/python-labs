@@ -2,9 +2,16 @@ from __future__ import division
 import json
 from collections import OrderedDict
 
+def check_port_open(port, addr='127.0.0.1'):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((addr, port))
+    if result == 0:
+        return True
+    else:
+        return False
+
 def load_json_preserve_order(s):
     return json.loads(s, object_pairs_hook=OrderedDict)
-
 
 def repr_dict_nice(d):
     def prepare_dict(d):
@@ -66,3 +73,62 @@ def humanize_bytes(n, precision=2):
 
     # noinspection PyUnboundLocalVariable
     return '%.*f %s' % (precision, n / factor, suffix)
+
+
+def sanitize_filename(s, restricted=False, is_id=False):
+    """Sanitizes a string so it could be used as part of a filename.
+    If restricted is set, use a stricter subset of allowed characters.
+    Set is_id if this is not an arbitrary string, but an ID that should be kept
+    if possible.
+    """
+    def replace_insane(char):
+        if restricted and char in ACCENT_CHARS:
+            return ACCENT_CHARS[char]
+        if char == '?' or ord(char) < 32 or ord(char) == 127:
+            return ''
+        elif char == '"':
+            return '' if restricted else '\''
+        elif char == ':':
+            return '_-' if restricted else ' -'
+        elif char in '\\/|*<>':
+            return '_'
+        if restricted and (char in '!&\'()[]{}$;`^,#' or char.isspace()):
+            return '_'
+        if restricted and ord(char) > 127:
+            return '_'
+        return char
+
+    # Handle timestamps
+    s = re.sub(r'[0-9]+(?::[0-9]+)+', lambda m: m.group(0).replace(':', '_'), s)
+    result = ''.join(map(replace_insane, s))
+    if not is_id:
+        while '__' in result:
+            result = result.replace('__', '_')
+        result = result.strip('_')
+        # Common case of "Foreign band name - English song title"
+        if restricted and result.startswith('-_'):
+            result = result[2:]
+        if result.startswith('-'):
+            result = '_' + result[len('-'):]
+        result = result.lstrip('.')
+        if not result:
+            result = '_'
+    return result
+
+
+def sanitize_path(s):
+    """Sanitizes and normalizes path on Windows"""
+    if sys.platform != 'win32':
+        return s
+    drive_or_unc, _ = os.path.splitdrive(s)
+    if sys.version_info < (2, 7) and not drive_or_unc:
+        drive_or_unc, _ = os.path.splitunc(s)
+    norm_path = os.path.normpath(remove_start(s, drive_or_unc)).split(os.path.sep)
+    if drive_or_unc:
+        norm_path.pop(0)
+    sanitized_path = [
+        path_part if path_part in ['.', '..'] else re.sub(r'(?:[/<>:"\|\\?\*]|[\s.]$)', '#', path_part)
+        for path_part in norm_path]
+    if drive_or_unc:
+        sanitized_path.insert(0, drive_or_unc + os.path.sep)
+    return os.path.join(*sanitized_path)

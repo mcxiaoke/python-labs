@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import functools
 import itertools
@@ -13,6 +12,12 @@ PY3 = sys.version_info[0] == 3
 PY35 = sys.version_info[0:2] >= (3, 5)
 PYPY = 'pypy' in sys.version.lower()
 OS_WIN = 'win32' in str(sys.platform).lower()
+
+ASCII_CHARS   = set(chr(x) for x in range(128))
+URL_SAFE      = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                    'abcdefghijklmnopqrstuvwxyz'
+                    '0123456789' '#' '_.-/~')
+IRI_UNSAFE = ASCII_CHARS - URL_SAFE
 
 if PY3:
     string_types = str,
@@ -53,6 +58,27 @@ else:
 
     MAXSIZE = int((1 << 31) - 1)
 
+if PY3:
+    # list-producing versions of the major Python iterating functions
+    def lrange(*args, **kwargs):
+        return list(range(*args, **kwargs))
+
+    def lzip(*args, **kwargs):
+        return list(zip(*args, **kwargs))
+
+    def lmap(*args, **kwargs):
+        return list(map(*args, **kwargs))
+
+    def lfilter(*args, **kwargs):
+        return list(filter(*args, **kwargs))
+else:
+    import __builtin__
+    # Python 2-builtin ranges produce lists
+    lrange = __builtin__.range
+    lzip = __builtin__.zip
+    lmap = __builtin__.map
+    lfilter = __builtin__.filter
+
 try:
     import simplejson as json
 except ImportError:
@@ -79,6 +105,50 @@ def _import_module(name):
     """Import module, returning the module after the last dot."""
     __import__(name)
     return sys.modules[name]
+
+if PY3:
+    def iterkeys(d, **kw):
+        return iter(d.keys(**kw))
+
+    def itervalues(d, **kw):
+        return iter(d.values(**kw))
+
+    def iteritems(d, **kw):
+        return iter(d.items(**kw))
+
+    def iterlists(d, **kw):
+        return iter(d.lists(**kw))
+
+    viewkeys = operator.methodcaller("keys")
+
+    viewvalues = operator.methodcaller("values")
+
+    viewitems = operator.methodcaller("items")
+else:
+    def iterkeys(d, **kw):
+        return d.iterkeys(**kw)
+
+    def itervalues(d, **kw):
+        return d.itervalues(**kw)
+
+    def iteritems(d, **kw):
+        return d.iteritems(**kw)
+
+    def iterlists(d, **kw):
+        return d.iterlists(**kw)
+
+    viewkeys = operator.methodcaller("viewkeys")
+
+    viewvalues = operator.methodcaller("viewvalues")
+
+    viewitems = operator.methodcaller("viewitems")
+
+_add_doc(iterkeys, "Return an iterator over the keys of a dictionary.")
+_add_doc(itervalues, "Return an iterator over the values of a dictionary.")
+_add_doc(iteritems,
+         "Return an iterator over the (key, value) pairs of a dictionary.")
+_add_doc(iterlists,
+         "Return an iterator over the (key, [values]) pairs of a dictionary.")
 
 if PY3:
     def b(s):
@@ -117,71 +187,6 @@ else:
 _add_doc(b, """Byte literal""")
 _add_doc(u, """Text literal""")
 
-print_ = getattr(moves.builtins, "print", None)
-if print_ is None:
-    def print_(*args, **kwargs):
-        """The new-style print function for Python 2.4 and 2.5."""
-        fp = kwargs.pop("file", sys.stdout)
-        if fp is None:
-            return
-
-        def write(data):
-            if not isinstance(data, basestring):
-                data = str(data)
-            # If the file has an encoding, encode unicode with it.
-            if (isinstance(fp, file) and
-                    isinstance(data, unicode) and
-                    fp.encoding is not None):
-                errors = getattr(fp, "errors", None)
-                if errors is None:
-                    errors = "strict"
-                data = data.encode(fp.encoding, errors)
-            fp.write(data)
-        want_unicode = False
-        sep = kwargs.pop("sep", None)
-        if sep is not None:
-            if isinstance(sep, unicode):
-                want_unicode = True
-            elif not isinstance(sep, str):
-                raise TypeError("sep must be None or a string")
-        end = kwargs.pop("end", None)
-        if end is not None:
-            if isinstance(end, unicode):
-                want_unicode = True
-            elif not isinstance(end, str):
-                raise TypeError("end must be None or a string")
-        if kwargs:
-            raise TypeError("invalid keyword arguments to print()")
-        if not want_unicode:
-            for arg in args:
-                if isinstance(arg, unicode):
-                    want_unicode = True
-                    break
-        if want_unicode:
-            newline = unicode("\n")
-            space = unicode(" ")
-        else:
-            newline = "\n"
-            space = " "
-        if sep is None:
-            sep = space
-        if end is None:
-            end = newline
-        for i, arg in enumerate(args):
-            if i:
-                write(sep)
-            write(arg)
-        write(end)
-if sys.version_info[:2] < (3, 3):
-    _print = print_
-
-    def print_(*args, **kwargs):
-        fp = kwargs.get("file", sys.stdout)
-        flush = kwargs.pop("flush", False)
-        _print(*args, **kwargs)
-        if flush and fp is not None:
-            fp.flush()
-
 if sys.version_info[0:2] < (3, 4):
     def wraps(wrapped, assigned=functools.WRAPPER_ASSIGNMENTS,
               updated=functools.WRAPPER_UPDATES):
@@ -209,3 +214,22 @@ def python_2_unicode_compatible(klass):
         klass.__unicode__ = klass.__str__
         klass.__str__ = lambda self: self.__unicode__().encode('utf-8')
     return klass
+
+
+# convert string to be utf-8 encoded
+def utf8_str(p, enc='utf-8'):
+    if p is None:
+        return None
+    if isinstance(p, text_type):
+        return p.encode('utf-8')
+    if enc != 'utf-8':
+        return p.decode(enc).encode('utf-8')
+    return p
+
+# convert string to be unicode encoded
+def unicode_str(p, enc='utf-8'):
+    if p is None:
+        return None
+    if isinstance(p, text_type):
+        return p
+    return p.decode(enc)

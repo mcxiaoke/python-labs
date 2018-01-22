@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-08-25 08:45:45
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 from datetime import datetime
 import codecs
 import os
@@ -92,8 +92,13 @@ def get_current_user():
 
 
 def now():
-    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S'.encode('utf-8'))
 
+def slice_list(l, n):
+    """Yield successive n-sized chunks from l."""
+    # for i in xrange(0, len(l), n):
+    #     yield l[i:i + n]
+    return [l[i:i + n] for i in xrange(0, len(l), n)]
 
 def write_list(name, ls):
     if not ls:

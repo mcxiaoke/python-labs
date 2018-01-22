@@ -100,40 +100,33 @@ def download_file(url, filename):
 
 
 def now():
-    return time.strftime('%Y-%m-%d-%H:%M:%S')
+    return time.strftime('%Y-%m-%d %H:%M:%S')
 
-def initializer():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-class MultiTask(object):
-
-    def __init__(self, func, args, pool_size=8, retry=1, sleep=60):
-        self.func = func
-        self.args = args
-        self.pool_size = pool_size
-        self.retry = retry
-        self.sleep = sleep
-        # initializer only for multi process, not thread
-        self.pool = Pool(self.pool_size, initializer)
-
-    def start(self):
-        while self.retry > 0:
-            try:
-                self.pool.map_async(self.func, self.args).get(999999)
-                self.pool.close()
-                self.pool.join()
-                print('Task execution completely.')
-                break
-            except KeyboardInterrupt, e:
-                print('Task terminated by user.', e)
-                self.pool.terminate()
-                break
-            except Exception, e:
-                self.pool.terminate()
-                self.retry -= 1
-                # traceback.print_exc()
+def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
+    def _initializer():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+    pool = Pool(pool_size, _initializer)
+    r = None
+    retry = 0
+    while retry <= retry_max:
+        try:
+            r = pool.map_async(func, args)
+            r.get(999999)
+            pool.close()
+            print('Task execution completely.')
+            break
+        except KeyboardInterrupt, e:
+            print('Task terminated by user.', e)
+            pool.terminate()
+            break
+        except Exception, e:
+            pool.terminate()
+            retry += 1
+            traceback.print_exc()
+            if retry <= retry_max:
                 print('Task error: {0}, {1} retry in {2}s'.format(
-                    e, sys.maxint - self.retry, sleep))
-                time.sleep(self.sleep)
-            finally:
-                self.pool.join()
+                    e, retry_max - retry, sleep))
+                time.sleep(sleep)
+        finally:
+            pool.join()
+    return r.get()

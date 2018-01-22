@@ -30,6 +30,14 @@ def distinct_list(source_list, sort=False, reverse=False):
         (x, True) for x in source_list).keys()
     return sorted(result_list, reverse=reverse) if sort else result_list
 
+def flatten_list(source_list):
+    result_list = []
+    for item in source_list:
+        if isinstance(item, list):
+            result_list.extend(item)
+        else:
+            result_list.append(item)
+    return result_list
 
 def url_filename(url):
     # return urlparse.urlparse(url).path

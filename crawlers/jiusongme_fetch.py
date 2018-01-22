@@ -12,13 +12,9 @@ import os
 import time
 import shutil
 import random
-import commons
 import argparse
 import traceback
 import zhconv
-import utils
-from bs4 import BeautifulSoup
-from utils import read_list, write_list, distinct_list, unquote_url
 
 ENC_ROOT_URL = 'aHR0cHM6Ly85c29uZy5tZS8='
 OUTPUT = 'ninesong'
@@ -41,13 +37,13 @@ def filter_post_url(tag):
 def fetch_post(url, output=os.path.join(OUTPUT, 'posts')):
     if not os.path.exists(output):
         os.makedirs(output)
-    post_name = zhconv.convert(utils.url_filename(url), 'zh-cn')
+    post_name = zhconv.convert(url_filename(url), 'zh-cn')
     post_file = os.path.join(output, '%s.txt' % post_name)
     if os.path.exists(post_file):
         print('Skip %s' % url)
     else:
         print('Fetch %s' % url)
-        soup = commons.soup(url, encoding='utf8')
+        soup = commons.soup(url)
         for s in soup.find_all('a'):
             s.decompose()
         content = soup.find(filter_post_content)
@@ -60,13 +56,15 @@ def fetch_post(url, output=os.path.join(OUTPUT, 'posts')):
                 f.write(content)
 
 
-def fetch_all_posts(use_pool=False):
+def fetch_all_posts(use_pool=True, max_count=999999,
+                    list_file=None, output=OUTPUT):
     print('Fetch all posts use_pool=%s' % use_pool)
-    output = OUTPUT
-    list_file = os.path.join(output, 'all.txt')
+    output = output or OUTPUT
+    list_file = list_file or os.path.join(output, 'all.txt')
     urls = read_list(list_file) or []
+    urls = urls[:max_count]
     if use_pool:
-        commons.MultiTask(fetch_post, urls).start()
+        commons.run_in_pool(fetch_post, urls)
     else:
         for url in urls:
             fetch_post(url)
@@ -82,39 +80,21 @@ def fetch_page_urls(page_no):
     # fetch_post(links[0])
 
 
-def fetch_all_urls(start=0, end=5, delta=True):
-    output = OUTPUT
-    list_file = os.path.join(output, 'all.txt')
+def fetch_all_urls(start=0, end=5, list_file=None, output=OUTPUT):
+    output = output or OUTPUT
+    list_file = list_file or os.path.join(output, 'all.txt')
     all_urls = read_list(list_file) or []
     pl_output = os.path.join(output, 'list')
     if not os.path.exists(pl_output):
         os.makedirs(pl_output)
-    pl_name_tpl = 'jiusong_p_%s.txt'
-    not_found_count = 0
-    for i in range(start, end):
-        pl_file = os.path.join(pl_output, pl_name_tpl % i)
-        if delta and os.path.exists(pl_file):
-            print('Skip exist page %s' % i)
-            continue
-        try:
-            urls = fetch_page_urls(i)
-            if urls:
-                all_urls.extend(urls)
-                write_list(pl_file, fix_urls(urls))
-            time.sleep(random.randint(0, 2))
-        except KeyboardInterrupt, e:
-            print("User interrupt, quit.")
-            raise
-        except Exception, e:
-            print("Error:'%s' on fetch page %s" % (e, i))
-            # traceback.print_exc()
-            error_count += 1
-            if error_count > 10:
-                traceback.print_exc()
-                break
-            time.sleep(5)
-        finally:
-            write_list(list_file, fix_urls(all_urls))
+    new_urls = commons.run_in_pool(fetch_page_urls, range(start, end))
+    if new_urls:
+        new_urls = flatten_list(new_urls)
+        print('fetch %s new urls' % len(new_urls))
+        all_urls.extend(new_urls)
+        write_list(list_file, fix_urls(all_urls))
+        new_list_file = os.path.join(output, 'new_%s_%s.txt' % (start, end))
+        write_list(new_list_file, fix_urls(new_urls))
 
 
 def fix_urls(urls):
@@ -135,19 +115,27 @@ def main():
         print(
             'Usage: %s -r[recent] or -a[all] or -d[download]' % sys.argv[0])
         exit(1)
-    if sys.argv[1] == '-r':
+    if sys.argv[1] == '-0':
         # recent
-        fetch_all_urls(1, 10, delta=False)
+        fetch_all_urls(1, 4)
+    elif sys.argv[1] == '-r':
+        # recent
+        fetch_all_urls(1, 11)
     elif sys.argv[1] == '-a':
         # all
-        fetch_all_urls(1, 1000, delta=False)
-    elif sys.argv[1] == '-d':
-        fetch_all_posts(use_pool=True)
+        fetch_all_urls(1, 1000)
+    elif sys.argv[1] == '-dr':
+        fetch_all_posts(max_count=200)
+    elif sys.argv[1] == '-da':
+        fetch_all_posts()
 
 
 if __name__ == '__main__':
     # fix for relative import other script
     # https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html
-    sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    sys.path.insert(1, os.path.dirname(
+        os.path.dirname(os.path.realpath(__file__))))
     # print(sys.path)
+    from lib import commons
+    from lib.utils import read_list, write_list, distinct_list, flatten_list, unquote_url, url_filename
     main()

@@ -11,15 +11,7 @@ import codecs
 import re
 import string
 import shutil
-from os import path
 from datetime import datetime
-
-PY2 = sys.version_info.major == 2
-PY3 = sys.version_info.major == 3
-os_encoding = sys.getfilesystemencoding()
-os_win = sys.platform.startswith('win')
-print(sys.platform, sys.version_info.major,
-      sys.stdin.encoding, sys.stdout.encoding, os_encoding)
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'.djvu', u'.txt')
@@ -27,21 +19,7 @@ INVALID_CHARS = u',._[]【】《》：”'
 
 processed = []
 
-
-def log(s):
-    if os_win and PY2:
-        if type(s) == str:
-            print(s.decode('utf-8'))
-        elif type(s) == unicode:
-            # or s.encode('gbk', 'ignore')
-            print(s.encode('gb18030'))
-        else:
-            print(s)
-    else:
-        print(s)
-
-
-def replace(s):
+def _replace_invalid(s):
     for c in INVALID_CHARS:
         if c in s:
             s = s.replace(c, " ")
@@ -49,7 +27,7 @@ def replace(s):
     return s.strip()
 
 
-def fix_name(base):
+def nomalize_name(old_name):
     '''
     1. strip (xxx) at name start
         (Wiley Finance 019)Portfolio Theory and Performance Analysis.pdf
@@ -66,32 +44,32 @@ def fix_name(base):
         04 - Seven Concurrency Models in Seven Weeks_When Threads (2014).epub
     '''
     # print('original: {}'.format(base))
-    new_base = base
+    new_name = old_name
     # pass 1
     p = re.compile(r'(?:\(.+?\))\s*(.+)', re.I)
     m = p.match(base)
     if m:
-        new_base = m.group(1)
+        new_name = m.group(1)
         # print('pass1: {}'.format(new_base))
     # pass 2
     p = re.compile(r'\d+[-_\.](.+)', re.I)
-    m = p.match(new_base)
+    m = p.match(new_name)
     if m:
-        new_base = m.group(1)
+        new_name = m.group(1)
         # print('pass2: {}'.format(new_base))
     # pass 4
-    new_base = replace(new_base).strip()
+    new_name = _replace_invalid(new_name)
     # print('pass4: {}'.format(new_base))
     # pass 5
     # new_base = string.capwords(new_base)
     # print('pass5: {}'.format(new_base))
-    return (base, new_base)
+    return (old_name, new_name)
 
 
-def rename(curdir, name, dry_run=False):
-    old_path = path.join(curdir, name)
+def fix_ebook_fileanme(old_path, dry_run=False):
+    curdir = os.path.dirname(old_path)
     log(u'file: {}'.format(old_path))
-    base, ext = path.splitext(name)
+    base, ext = os.path.splitext(name)
     if not ext:
         return old_path
     if ext.lower() not in FORMATS:
@@ -122,11 +100,12 @@ def rename(curdir, name, dry_run=False):
     return old_path
 
 
-def main(root, dry_run=False):
+def rename_ebooks(root, dry_run=False):
     for curdir, subdirs, filenames in os.walk(root, topdown=True):
-        print(u'-- {} --'.format(curdir))
+        log(u'-- {} --'.format(curdir))
         for name in filenames:
-            rename(curdir, name, dry_run)
+            filename = os.path.join(curdir, name)
+            fix_ebook_fileanme(filename, dry_run)
     logfile = os.path.join(root, 'logs.txt')
     log(u'processed count: {}'.format(len(processed)))
     with codecs.open(logfile, 'w', 'utf-8') as f:
@@ -146,16 +125,20 @@ def contains_cjk(text):
  
 def remove_cjk(root, dry_run=False):
     for curdir, subdirs, filenames in os.walk(root, topdown=True):
-        print(u'-- {} --'.format(curdir))
+        log(u'-- {} --'.format(curdir))
         for name in filenames:
             if contains_cjk(name):
                 log(u'Delete {}'.format(name))
                 os.remove(os.path.join(curdir,name))
 
 if __name__ == '__main__':
+    sys.path.insert(1, os.path.dirname(
+        os.path.dirname(os.path.realpath(__file__))))
+    from lib.debug import log
+    from lib.compat import PY2
     print(sys.argv)
     if len(sys.argv) < 2:
-        print(u'Usage: {} target_dir -n'.format(sys.argv[0]))
+        log(u'Usage: {} target_dir -n'.format(sys.argv[0]))
         sys.exit(1)
     dry_run = False
     if len(sys.argv) == 3 and sys.argv[2] == '-n':
@@ -163,6 +146,7 @@ if __name__ == '__main__':
         log(u"Mode: dry run mode, no files will be renamed.")
     root = os.path.abspath(sys.argv[1])
     if PY2:
+        os_encoding = sys.getfilesystemencoding()
         root = root.decode(os_encoding)
     log(u'Root: {}'.format(root))
-    remove_cjk(root, dry_run)
+    rename_ebooks(root, dry_run)

@@ -9,7 +9,7 @@ import base64
 import warnings
 import threading
 
-from compat import iteritems, text_type, binary_type, string_types
+from .compat import iteritems, text_type, binary_type, string_types
 
 md5string = lambda x: hashlib.md5(utf8(x)).hexdigest()
 

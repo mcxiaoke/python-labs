@@ -13,10 +13,13 @@ import traceback
 import time
 from requests import exceptions
 from bs4 import BeautifulSoup
-from urlparse import urlparse
 from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
 
+from future.standard_library import install_aliases
+install_aliases()
+
+from urllib.parse import urlparse, urlencode
 
 class HTTPError(Exception):
     def __init__(self, message, code):
@@ -58,7 +61,7 @@ def get_safe_filename(text):
 def safe_rename(src, dst):
     try:
         shutil.move(src, dst)
-    except OSError, e:
+    except OSError as e:
         print('{0} rename {1} to {1}'.format(e, src, dst))
     finally:
         if os.path.exists(src):
@@ -115,11 +118,11 @@ def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
             pool.close()
             print('Task execution completely.')
             break
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt as e:
             print('Task terminated by user.', e)
             pool.terminate()
             break
-        except Exception, e:
+        except Exception as e:
             pool.terminate()
             retry += 1
             traceback.print_exc()

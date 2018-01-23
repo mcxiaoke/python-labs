@@ -1,4 +1,4 @@
-from compat import OS_WIN, PY2
+from .compat import OS_WIN, PY2
 
 def log(s):
     if OS_WIN and PY2:

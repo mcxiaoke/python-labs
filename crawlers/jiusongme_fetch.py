@@ -47,6 +47,9 @@ def fetch_post(url, output=os.path.join(OUTPUT, 'posts')):
         for s in soup.find_all('a'):
             s.decompose()
         content = soup.find(filter_post_content)
+        content = content.get_text()
+        content.replace('>', ' ')
+        content.replace('<', ' ')
         content = zhconv.convert(content.get_text(), 'zh-cn')
         # print('Post %s (%s)' % (post_name, len(content)))
         if content and len(content) > 500:

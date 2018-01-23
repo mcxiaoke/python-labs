@@ -32,7 +32,7 @@ import os
 sys.path.insert(1, os.path.dirname(
     os.path.dirname(os.path.realpath(__file__))))
 
-from lib.compat import PY2, text_type, binary_type
+from .compat import PY2, text_type, binary_type
 
 # utility routines to convert all paths to be full unicode
 

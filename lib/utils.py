@@ -8,13 +8,14 @@ import codecs
 import os
 import sys
 import urllib
-import urlparse
 import requests
 import shutil
 import time
 import json
 import collections
 import configparser
+from . import compat
+from . import enc
 
 
 def import_src(name, fpath):
@@ -92,13 +93,14 @@ def get_current_user():
 
 
 def now():
-    return datetime.now().strftime('%Y-%m-%d %H:%M:%S'.encode('utf-8'))
+    format_str = compat.unicode_str('%Y-%m-%d %H:%M:%S')
+    return datetime.now().strftime(format_str)
 
 def slice_list(l, n):
     """Yield successive n-sized chunks from l."""
     # for i in xrange(0, len(l), n):
     #     yield l[i:i + n]
-    return [l[i:i + n] for i in xrange(0, len(l), n)]
+    return [l[i:i + n] for i in range(0, len(l), n)]
 
 def write_list(name, ls):
     if not ls:

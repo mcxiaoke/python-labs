@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2018-01-17 13:59:14
-from __future__ import print_function
+from __future__ import unicode_literals, division, absolute_import, print_function
 import codecs
 import base64
 import json
@@ -16,6 +16,9 @@ import traceback
 import textwrap
 import pypub
 
+__version__ = '0.1.0'
+
+DEFAULT_CHAPTERS_COUNT = 500
 CHAPTER_TEMPLATE = 'resources/chapter.xhtml'
 
 def create_html_from_text(text_file, dst=None):
@@ -41,42 +44,80 @@ def create_html_from_text(text_file, dst=None):
         print('create_chapter to %s' % html_file)
         return html_file, name
 
-
-def create_epub(src, dst):
+def create_epub_single(files, output, title):
     import pypub
-    book = pypub.Epub(u'ePub Book', creator=u'test',
-                      language=u'cn', rights=u'test', 
-                      publisher=u'test',)
-    count = 0
-    html_files = []
-    for name in os.listdir(src):
-        f = os.path.join(src, name)
-        html_files.append(create_html_from_text(f, dst))
-        count += 1
-        if count > 3:
-            break
-    
-    for file,title in html_files:
-        book.add_chapter(pypub.create_chapter_from_file(file, title))
-    # book.add_chapter(pypub.create_chapter_from_url('https://www.zhihu.com/question/19991740/answer/141072770'))
-    # book.add_chapter(pypub.create_chapter_from_url('https://baike.baidu.com/item/%E7%8C%AB%E5%92%AA'))
-    # book.add_chapter(pypub.create_chapter_from_url('https://www.douban.com/review/9080557/'))
-    # book.add_chapter(pypub.create_chapter_from_url('http://www.cnblogs.com/vamei/archive/2012/09/13/2682778.html'))
-    book.add_chapter(pypub.create_chapter_from_url('https://www.douban.com/note/654068918/'))
-    book.create_epub(os.path.dirname(dst),
-                     epub_name='test')
+    creator = "Anonymous"
+    language = 'cn'
+    rights = now()
+    publisher = 'Anonymous'
+    print('Creating epub: <%s>' % title)
+    book = pypub.Epub(title, creator=creator,
+                    language=language, rights=rights, 
+                    publisher=publisher)
+    for file in files:
+        name = os.path.basename(file)
+        c_title = os.path.splitext(name)[0]
+        c_file = file
+        book.add_chapter(pypub.create_chapter_from_file(c_file, c_title))
+    book.create_epub(output, epub_name=title)
 
+def create_epub_volumes(all_files, output, title_prefix, max_count=DEFAULT_CHAPTERS_COUNT):
+    files_chunks = slice_list(all_files, max_count)
+    page_no = 1
+    for i in range(0, len(files_chunks)):
+        files = files_chunks[i]
+        n = len(files)
+        title = "%s Vol %s (%s-%s)" % (title_prefix, i+1, page_no, page_no+n)
+        page_no += n
+        create_epub_single(files, output, title=title)
+
+def create_epub(src, output, title, max_count=DEFAULT_CHAPTERS_COUNT):
+    src = upath.pathof(src)
+    title = enc.unicode_string(title or 'ePub Book')
+    def is_html_or_text(n):
+        return n.lower().endswith('.txt') or n.lower().endswith('.html')
+    files = [os.path.join(src, n) for n in os.listdir(src) if is_html_or_text(n)]
+    if len(files) > max_count:
+        create_epub_volumes(files, output, title, max_count)
+    else:
+        create_epub_volume(files, output, title, max_count)
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='Easy ePub Maker v{0}'.format(__version__),
+        epilog='''https://github.com/mcxiaoke/python-labs
+        ''')
+    parser.add_argument('input', help='Source text or html files')
+    parser.add_argument('-o', '--output',
+                        help='Output directory')
+    parser.add_argument('-t', '--title', default='ePub Book',
+                        help='ePub book title')
+    parser.add_argument('-c', '--count', type=int, default=DEFAULT_CHAPTERS_COUNT,
+                        help='Max chapters per book')
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    return parser.parse_args()
 
 def main():
-    src = sys.argv[1]
-    dst = os.path.expanduser('~/Downloads/epub_temp')
-    create_epub(src, dst)
-    # os.popen('open %s' % os.path.dirname(dst))
-
+    args = vars(parse_args())
+    print(args)
+    src = upath.pathof(args.get('input'))
+    if args.get('output'):
+        dst = upath.pathof(args.get('output'))
+    else:
+        dst = os.path.abspath('temp')
+    title = args.get('title')
+    max_count = args.get('count')
+    create_epub(src, dst, title, max_count)
+    
 
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
     from lib import commons
-    from lib.utils import read_file, write_file, read_list, write_list
+    from lib import upath
+    from lib import enc
+    from lib.utils import read_file, write_file, read_list, write_list, slice_list, now
     main()

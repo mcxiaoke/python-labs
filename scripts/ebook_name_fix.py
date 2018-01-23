@@ -15,7 +15,7 @@ from datetime import datetime
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'.djvu', u'.txt')
-INVALID_CHARS = u',._[]【】《》：”'
+INVALID_CHARS = u',._[]【】《》：”‘，。？'
 
 processed = []
 
@@ -23,6 +23,7 @@ def _replace_invalid(s):
     for c in INVALID_CHARS:
         if c in s:
             s = s.replace(c, " ")
+    s = s.replace('  ', ' ')
     s = s.replace('  ', ' ')
     return s.strip()
 
@@ -47,7 +48,7 @@ def nomalize_name(old_name):
     new_name = old_name
     # pass 1
     p = re.compile(r'(?:\(.+?\))\s*(.+)', re.I)
-    m = p.match(base)
+    m = p.match(old_name)
     if m:
         new_name = m.group(1)
         # print('pass1: {}'.format(new_base))
@@ -66,16 +67,16 @@ def nomalize_name(old_name):
     return (old_name, new_name)
 
 
-def fix_ebook_fileanme(old_path, dry_run=False):
+def fix_fileanme(old_path, dry_run=False):
     curdir = os.path.dirname(old_path)
     log(u'file: {}'.format(old_path))
-    base, ext = os.path.splitext(name)
+    base, ext = os.path.splitext(old_path)
     if not ext:
         return old_path
     if ext.lower() not in FORMATS:
         return old_path
     # print(name)
-    old_base, new_base = fix_name(base)
+    old_base, new_base = nomalize_name(base)
     if old_base == new_base:
         return old_path
     new_name = u'{}{}'.format(new_base, ext.lower())
@@ -105,7 +106,7 @@ def rename_ebooks(root, dry_run=False):
         log(u'-- {} --'.format(curdir))
         for name in filenames:
             filename = os.path.join(curdir, name)
-            fix_ebook_fileanme(filename, dry_run)
+            fix_fileanme(filename, dry_run)
     logfile = os.path.join(root, 'logs.txt')
     log(u'processed count: {}'.format(len(processed)))
     with codecs.open(logfile, 'w', 'utf-8') as f:

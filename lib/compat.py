@@ -288,7 +288,7 @@ def to_text(data, encoding='utf8'):
     if isinstance(data, text_type):
         return data
     elif isinstance(data, binary_type):
-        return data.decode(encoding)
+        return data.decode(encoding, 'ignore')
     else:
         return text_type(data)
 
@@ -302,7 +302,7 @@ def to_binary(data, encoding='utf8'):
     if isinstance(data, binary_type):
         return data
     elif isinstance(data, text_type):
-        return data.encode(encoding)
+        return data.encode(encoding, 'ignore')
     else:
         return binary_type(data)
 

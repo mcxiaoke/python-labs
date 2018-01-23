@@ -1,9 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Author: mcxiaoke
-# @Date:   2015-08-07 07:36:01
+from __future__ import unicode_literals, division, absolute_import, print_function
 import sqlite3
 
+class ReadOnlyDict(dict):
+    """A Read Only Dict"""
+
+    def __setitem__(self, key, value):
+        raise Exception("dict is read-only")
+
+
+def getitem(obj, key=0, default=None):
+    """Get first element of list or return default"""
+    try:
+        return obj[key]
+    except:
+        return default
 
 class BaseDB(object):
 

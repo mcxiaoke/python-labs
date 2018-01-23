@@ -73,7 +73,7 @@ def create_epub_volumes(all_files, output, title_prefix, max_count=DEFAULT_CHAPT
 
 def create_epub(src, output, title, max_count=DEFAULT_CHAPTERS_COUNT):
     src = upath.pathof(src)
-    title = enc.unicode_string(title or 'ePub Book')
+    title = compat.to_text(title or 'ePub Book')
     def is_html_or_text(n):
         return n.lower().endswith('.txt') or n.lower().endswith('.html')
     files = [os.path.join(src, n) for n in os.listdir(src) if is_html_or_text(n)]
@@ -116,8 +116,8 @@ def main():
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
+    from lib import compat
     from lib import commons
     from lib import upath
-    from lib import enc
     from lib.utils import read_file, write_file, read_list, write_list, slice_list, now
     main()

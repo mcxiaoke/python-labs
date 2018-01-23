@@ -15,8 +15,22 @@ import json
 import collections
 import configparser
 from . import compat
-from . import enc
 
+def run_in_thread(func, *args, **kwargs):
+    """Run function in thread, return a Thread object"""
+    from threading import Thread
+    thread = Thread(target=func, args=args, kwargs=kwargs)
+    thread.daemon = True
+    thread.start()
+    return thread
+
+def run_in_subprocess(func, *args, **kwargs):
+    """Run function in subprocess, return a Process object"""
+    from multiprocessing import Process
+    thread = Process(target=func, args=args, kwargs=kwargs)
+    thread.daemon = True
+    thread.start()
+    return thread
 
 def import_src(name, fpath):
     import os

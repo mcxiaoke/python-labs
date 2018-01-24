@@ -121,13 +121,12 @@ def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
         except Exception as e:
             pool.terminate()
             retry += 1
+            traceback.print_exc()
             if retry <= retry_max:
-                next_delay = sleep * (retry_max/6+1)
+                next_delay = sleep * (retry%6+1)
                 print('Task error: {0}, {1} retry in {2}s'.format(
                     e, retry_max - retry, next_delay))
                 time.sleep(sleep * next_delay)
-            else:
-                traceback.print_exc()
         finally:
             pool.join()
     return r.get()

@@ -72,11 +72,11 @@ def download_image(url, filename, id):
     return commons.download_file(url, filename)
 
 # 下载某一期的图卦正文和图片
-def download_page(item, include_images=False):
+def download_page(item, include_images=True):
     id = item['id']
     url = page_tpl.format(id)
     # 如果已下载，跳过
-    filename = os.path.join(OUTPUT, '{}.html'.format(id))
+    filename = os.path.join(OUTPUT, '%s_%s.html' % (item['date'], item['id']))
     if os.path.exists(filename):
         print('skip page {0}'.format(url))
         return
@@ -88,7 +88,7 @@ def download_page(item, include_images=False):
         # 获取所有的图片URL
         imgs = soup.find_all('img')
         # 图片保存目录
-        img_dirname = 'images_{0}'.format(id)
+        img_dirname = '%s_%s_images' % (item['date'], item['id'])
         imgdir = os.path.join(OUTPUT, img_dirname)
         if not os.path.exists(imgdir):
             os.mkdir(imgdir)

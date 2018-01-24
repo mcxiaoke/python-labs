@@ -13,7 +13,6 @@ import shutil
 import time
 import json
 import collections
-import configparser
 from . import compat
 
 def run_in_thread(func, *args, **kwargs):
@@ -52,7 +51,7 @@ def flatten_list(source_list):
             result_list.extend(item)
         else:
             result_list.append(item)
-    return result_list
+    return [r for r in result_list if r]
 
 def url_filename(url):
     # return urlparse.urlparse(url).path

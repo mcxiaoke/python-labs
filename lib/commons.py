@@ -15,11 +15,7 @@ from requests import exceptions
 from bs4 import BeautifulSoup
 from multiprocessing import Pool, Lock
 from multiprocessing.dummy import Pool as ThreadPool
-
-from future.standard_library import install_aliases
-install_aliases()
-
-from urllib.parse import urlparse, urlencode
+from .compat import urlparse
 
 class HTTPError(Exception):
     def __init__(self, message, code):
@@ -105,7 +101,7 @@ def download_file(url, filename):
 def now():
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
-def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
+def run_in_pool(func, args, pool_size=8, retry_max=0, sleep=60):
     def _initializer():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
     pool = Pool(pool_size, _initializer)

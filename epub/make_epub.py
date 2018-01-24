@@ -18,8 +18,12 @@ import pypub
 
 __version__ = '0.1.0'
 
-DEFAULT_CHAPTERS_COUNT = 500
+MAX_CH_COUNT = 500
+SIZE_M = 1024 * 1024
+DEFAULT_BOOK_SIZE = 40  # in MB
+MAX_BOOK_SIZE = 200  # in MB
 CHAPTER_TEMPLATE = 'resources/chapter.xhtml'
+
 
 def create_html_from_text(text_file, dst=None):
     if not isinstance(text_file, unicode):
@@ -44,16 +48,17 @@ def create_html_from_text(text_file, dst=None):
         print('create_chapter to %s' % html_file)
         return html_file, name
 
+
 def create_epub_single(files, output, title):
     import pypub
     creator = "Anonymous"
     language = 'cn'
     rights = now()
     publisher = 'Anonymous'
-    print('Creating epub: <%s>' % title)
+    print('Creating epub: <%s> chapters:%s' % (title, len(files)))
     book = pypub.Epub(title, creator=creator,
-                    language=language, rights=rights, 
-                    publisher=publisher)
+                      language=language, rights=rights,
+                      publisher=publisher)
     for file in files:
         name = os.path.basename(file)
         c_title = os.path.splitext(name)[0]
@@ -61,26 +66,65 @@ def create_epub_single(files, output, title):
         book.add_chapter(pypub.create_chapter_from_file(c_file, c_title))
     book.create_epub(output, epub_name=title)
 
-def create_epub_volumes(all_files, output, title_prefix, max_count=DEFAULT_CHAPTERS_COUNT):
-    files_chunks = slice_list(all_files, max_count)
+
+def slice_by_size(all_files, max_size):
+    max_size = max_size * SIZE_M
+    chunks = []
+    size = 0
+    chunk = []
+    total = 0
+    index = 0
+    for f in all_files:
+        chunk.append(f)
+        size += os.path.getsize(f)
+        index += 1
+        if size > max_size or index == len(all_files):
+            chunks.append(chunk)
+            total += size
+            # print('Chunk %s items=%s size=%s' %(len(chunks), len(chunk), humanize_bytes(size)))
+            size = 0
+            chunk = []
+    print('Chunks count=%s size=%s' % (len(chunks), humanize_bytes(total)))
+    return chunks
+
+
+def create_volumes_by_size(all_files, output, title_prefix, max_size=DEFAULT_BOOK_SIZE):
+    # files_chunks = slice_list(all_files, max_count)
+    files_chunks = slice_by_size(all_files, max_size)
     page_no = 1
     for i in range(0, len(files_chunks)):
         files = files_chunks[i]
         n = len(files)
-        title = "%s Vol %s (%s-%s)" % (title_prefix, i+1, page_no, page_no+n)
+        # title = "%s Vol %s (%s-%s)" % (title_prefix,
+        #                                i + 1, page_no, page_no + n)
+        title = "%s Vol %s" % (title_prefix, i + 1)
         page_no += n
         create_epub_single(files, output, title=title)
 
-def create_epub(src, output, title, max_count=DEFAULT_CHAPTERS_COUNT):
+
+def create_epub(src, output, title, max_size=DEFAULT_BOOK_SIZE):
+    if not os.path.isdir(src):
+        raise IOError('src "%s" not exists' % src)
+    if not title:
+        raise ValueError('title must not be empty')
+    if max_size > 100:
+        raise ValueError('max_size must between (%s - %s) (in MB)' %
+                         (1, MAX_BOOK_SIZE))
     src = upath.pathof(src)
-    title = compat.to_text(title or 'ePub Book')
+    output = upath.abspath(output or 'temp')
+    title = compat.to_text(title)
+    print('Create epub from [%s] to [%s], title is [%s], max size is [%sMB]'
+          % (src, output, title, max_size))
+
     def is_html_or_text(n):
         return n.lower().endswith('.txt') or n.lower().endswith('.html')
-    files = [os.path.join(src, n) for n in os.listdir(src) if is_html_or_text(n)]
-    if len(files) > max_count:
-        create_epub_volumes(files, output, title, max_count)
+    files = [os.path.join(src, n)
+             for n in os.listdir(src) if is_html_or_text(n)]
+    if files_size(files) > max_size * SIZE_M:
+        create_volumes_by_size(files, output, title, max_size)
     else:
-        create_epub_volume(files, output, title, max_count)
+        create_epub_single(files, output, title)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -91,27 +135,25 @@ def parse_args():
     parser.add_argument('input', help='Source text or html files')
     parser.add_argument('-o', '--output',
                         help='Output directory')
-    parser.add_argument('-t', '--title', default='ePub Book',
-                        help='ePub book title')
-    parser.add_argument('-c', '--count', type=int, default=DEFAULT_CHAPTERS_COUNT,
-                        help='Max chapters per book')
+    parser.add_argument('-t', '--title', help='ePub book title')
+    parser.add_argument('-s', '--size', type=int, default=DEFAULT_BOOK_SIZE,
+                        help='Max size per book (in MB)')
+    # parser.add_argument('-m', '--mode', choices=('count', 'size'), default='size')
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
     return parser.parse_args()
 
+
 def main():
     args = vars(parse_args())
     print(args)
-    src = upath.pathof(args.get('input'))
-    if args.get('output'):
-        dst = upath.pathof(args.get('output'))
-    else:
-        dst = os.path.abspath('temp')
+    src = upath.abspath(args.get('input'))
+    dst = args.get('output')
     title = args.get('title')
-    max_count = args.get('count')
-    create_epub(src, dst, title, max_count)
-    
+    max_size = args.get('size')
+    create_epub(src, dst, title, max_size)
+
 
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
@@ -119,5 +161,6 @@ if __name__ == '__main__':
     from lib import compat
     from lib import commons
     from lib import upath
-    from lib.utils import read_file, write_file, read_list, write_list, slice_list, now
+    from lib.utils import read_file, write_file, read_list, write_list, slice_list, now, files_size
+    from lib.utils2 import humanize_bytes
     main()

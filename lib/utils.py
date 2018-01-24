@@ -144,6 +144,18 @@ def read_file(name):
     with codecs.open(name, 'r', 'utf-8') as f:
         return f.read()
 
+def file_size(src):
+    total_size = 0
+    if  os.path.isdir(src):
+        for f in os.listdir(src):
+            if os.path.isfile(f):
+                total_size += os.path.getsize(f)
+    elif os.path.isfile(src):
+        total_size = os.path.getsize(src)
+    return total_size
+
+def files_size(files):
+    return sum([os.path.getsize(f) for f in files])
 
 def write_dict(name, dt):
     if not dt:

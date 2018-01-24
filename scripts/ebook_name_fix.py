@@ -15,7 +15,7 @@ from datetime import datetime
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'.djvu', u'.txt')
-INVALID_CHARS = u',._[]【】《》：”‘，。？'
+INVALID_CHARS = u'~!@#$%^&*()+,._[]{}<>?`【】《》：”‘，。？'
 
 processed = []
 
@@ -69,7 +69,7 @@ def nomalize_name(old_name):
 
 def fix_fileanme(old_path, dry_run=False):
     curdir = os.path.dirname(old_path)
-    log(u'file: {}'.format(old_path))
+    # log(u'file: {}'.format(old_path))
     base, ext = os.path.splitext(old_path)
     if not ext:
         return old_path

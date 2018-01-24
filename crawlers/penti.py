@@ -72,7 +72,7 @@ def download_image(url, filename, id):
     return commons.download_file(url, filename)
 
 # 下载某一期的图卦正文和图片
-def download_page(item):
+def download_page(item, include_images=False):
     id = item['id']
     url = page_tpl.format(id)
     # 如果已下载，跳过
@@ -84,44 +84,45 @@ def download_page(item):
     # 必须用gbk，要不然繁体乱码
     # 虽然网页上写的是gb2312，但是浏览器实际使用的是gbk
     soup = commons.soup(url, encoding='gbk')
-    # 获取所有的图片URL
-    imgs = soup.find_all('img')
-    # 图片保存目录
-    img_dirname = 'images_{0}'.format(id)
-    imgdir = os.path.join(OUTPUT, img_dirname)
-    if not os.path.exists(imgdir):
-        os.mkdir(imgdir)
-    # 逐个下载图片
-    for img in imgs:
-        from_src = img['src']
-        # 跳过没有扩展名的图片
-        if not os.path.splitext(from_src)[1]:
-            continue
-        if not from_src.startswith('http://'):
-            # 给部分不是完整的图片URL添加域名部分
-            from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
-        # 过滤不合法的文件名字符
-        to_src = commons.get_safe_filename(from_src)
-        imgfile = os.path.join(imgdir, to_src)
-        # 替换为本地图片链接
-        img['src'] = os.path.join(img_dirname, to_src)
-        if os.path.exists(imgfile):
-            # 跳过已存在的图片
-            print('skip exists image {0}'.format(from_src))
-        else:
-            # 不存在则下载
-            iurl, iname = download_image(from_src, imgfile, id)
-            if not iname:
-                # 如果图片无法下载，保留原始URL
-                img['src'] = from_src
+    if include_images:
+        # 获取所有的图片URL
+        imgs = soup.find_all('img')
+        # 图片保存目录
+        img_dirname = 'images_{0}'.format(id)
+        imgdir = os.path.join(OUTPUT, img_dirname)
+        if not os.path.exists(imgdir):
+            os.mkdir(imgdir)
+        # 逐个下载图片
+        for img in imgs:
+            from_src = img['src']
+            # 跳过没有扩展名的图片
+            if not os.path.splitext(from_src)[1]:
+                continue
+            if not from_src.startswith('http://'):
+                # 给部分不是完整的图片URL添加域名部分
+                from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
+            # 过滤不合法的文件名字符
+            to_src = commons.get_safe_filename(compat.urlparse(from_src).path)
+            imgfile = os.path.join(imgdir, to_src)
+            # 替换为本地图片链接
+            img['src'] = os.path.join(img_dirname, to_src)
+            if os.path.exists(imgfile):
+                # 跳过已存在的图片
+                print('skip exists image {0}'.format(from_src))
+            else:
+                # 不存在则下载
+                iurl, iname = download_image(from_src, imgfile, id)
+                if not iname:
+                    # 如果图片无法下载，保留原始URL
+                    img['src'] = from_src
     tempfile = '{0}.tmp'.format(filename)
     # 如果正文和图片都下载完成，没有错误，则保存到文件
-    with open(tempfile, 'w') as f:
+    with codecs.open(tempfile, 'w', 'utf8') as f:
         # 用utf写入文件，所以html头的gb2312需要改为utf8
-        content = unicode(soup).replace('charset=gb2312', 'charset=utf-8')
-        f.write(content.encode('utf8'))
+        content = soup.prettify().replace('charset=gb2312', 'charset=utf-8')
+        f.write(content)
     commons.safe_rename(tempfile, filename)
-    print('page saved {0}'.format(url))
+    print('page saved to %s' % filename)
     return filename
 
 

@@ -89,10 +89,10 @@ def soup(url, encoding=None):
 def download_file(url, filename):
     tempfile = u'{0}.tmp'.format(filename)
     r = get(url)
-    if r.status_code > 300:
-        return url, None
+    if r.status_code >= 300:
+        raise IOError("HTTP Status Code %s" % r.status_code)
     with open(tempfile, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=8196):
+        for chunk in r.iter_content(chunk_size=40960):
             f.write(chunk)
     safe_rename(tempfile, filename)
     return url, filename
@@ -101,13 +101,13 @@ def download_file(url, filename):
 def now():
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
-def run_in_pool(func, args, pool_size=8, retry_max=0, sleep=60):
+def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
     def _initializer():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-    pool = Pool(pool_size, _initializer)
     r = None
     retry = 0
     while retry <= retry_max:
+        pool = Pool(pool_size, _initializer)
         try:
             r = pool.map_async(func, args)
             r.get(999999)
@@ -121,11 +121,13 @@ def run_in_pool(func, args, pool_size=8, retry_max=0, sleep=60):
         except Exception as e:
             pool.terminate()
             retry += 1
-            traceback.print_exc()
             if retry <= retry_max:
+                next_delay = sleep * (retry_max/6+1)
                 print('Task error: {0}, {1} retry in {2}s'.format(
-                    e, retry_max - retry, sleep))
-                time.sleep(sleep)
+                    e, retry_max - retry, next_delay))
+                time.sleep(sleep * next_delay)
+            else:
+                traceback.print_exc()
         finally:
             pool.join()
     return r.get()

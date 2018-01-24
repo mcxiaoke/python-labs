@@ -130,7 +130,7 @@ def download_pages(items):
     # 多进程/线程下载全部图卦
     # for item in items:
     #     download_page(item)
-    rs = commons.run_in_pool(download_page, items)
+    rs = commons.run_in_pool(download_page, items, retry_max=1000, sleep=60)
     for r in rs:
         print(r) 
 

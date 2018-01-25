@@ -34,13 +34,14 @@ def get_image_url(item):
 
 def download_images(items):
     if items:
+        print('Start downloadin %s images' % len(items))
         urls = [get_image_url(item) for item in items]
         urls = filter(None, urls)
         for url in urls:
             commons.download(url, OUTPUT)
 
 def download_images_async(items):
-    pool.submit(download_images, (items,))
+    pool.submit(download_images, items)
 
 def main():
     output = os.path.abspath(OUTPUT)
@@ -49,26 +50,29 @@ def main():
     data_file = os.path.join(output,'data_%s.json' % int(time.time()))
     root_url = 'https://9gag.com/v1/group-posts/group/gif/type/hot'
     items = []
-    query_next = None
-    if len(sys.argv) == 2:
-        if os.path.exists(sys.argv[1]):
-            old_posts = utils.read_dict(sys.argv[1])
-            if old_posts and len(old_posts) > 0:
-                print('Old posts count=%s' % len(old_posts))
-                download_images_async(old_posts)
-                item = old_posts[-1]
-                query_next = ('after=%s&c=10' % item['id'])
-                items.extend(old_posts)
-        else:
-            exit(233)
+    query_next = 'after=aAxYL10%2CaeMNqGO%2CaAxYLwo&c=10'
+    # if len(sys.argv) == 2:
+    #     if os.path.exists(sys.argv[1]):
+    #         old_posts = utils.read_dict(sys.argv[1])
+    #         if old_posts and len(old_posts) > 0:
+    #             print('Old posts count=%s' % len(old_posts))
+    #             download_images_async(old_posts)
+    #             item = old_posts[-1]
+    #             query_next = ('after=%s&c=10' % item['id'])
+    #             items.extend(old_posts)
+    #     else:
+    #         exit(233)
     url = '%s?%s' % (root_url, query_next or '')
     r = commons.get(url)
     print('Page: %s' % url)
     while r.status_code < 300:
         posts = r.json()['data']['posts']
+        if not posts:
+            break
+        print('Found %s new posts' % len(posts))
         items.extend(posts)
         utils.write_dict(data_file, items)
-        download_images_async(items)
+        download_images_async(posts)
         query_next = r.json()['data']['nextCursor']
         if query_next:
             url = '%s?%s' % (root_url, query_next)

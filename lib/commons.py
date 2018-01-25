@@ -42,7 +42,7 @@ def get_headers(url):
     headers = {}
     u = urlparse(url)
     headers['Referer'] = '{0}://{1}/'.format(u.scheme, u.netloc)
-    headers['User-Agent'] = get_user_agent()
+    headers['User-Agent'] = '%s %s' % (get_user_agent(), time.time())
     return headers
 
 
@@ -63,6 +63,17 @@ def safe_rename(src, dst):
         if os.path.exists(src):
             os.remove(src)
 
+def download(url, output, **options):
+    filename = os.path.basename(url)
+    filename = get_safe_filename(filename)
+    filepath = os.path.join(output, filename)
+    if not os.path.exists(filepath):
+        r = requests.get(url, stream=True, 
+                    headers=get_headers(url), **options)
+        print('Downloading %s' % url)
+        with open(filepath, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    return filepath
 
 def get(url, encoding=None, **options):
     r = requests.get(url, timeout=DEFAULT_TIMEOUT,

@@ -61,10 +61,7 @@ def url_filename(url):
 
 
 def unquote_url(url):
-    if isinstance(url, unicode):
-        return urllib.unquote(url.encode('utf-8')).decode('utf-8')
-    else:
-        return urllib.unquote(url)
+    return compat.unquote(url)
 
 
 def requests_to_curl(r):
@@ -127,7 +124,7 @@ def read_list(name):
     if not os.path.isfile(name):
         return []
     with codecs.open(name, 'r', 'utf-8') as f:
-        return filter(bool, [line.strip() for line in f])
+        return list(filter(bool, [line.strip() for line in f]))
 
 
 def write_file(name, data):

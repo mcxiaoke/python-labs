@@ -15,6 +15,7 @@ import argparse
 import traceback
 import textwrap
 import pypub
+from multiprocessing import Process
 
 __version__ = '0.1.0'
 
@@ -48,14 +49,13 @@ def create_html_from_text(text_file, dst=None):
         print('create_chapter to %s' % html_file)
         return html_file, name
 
-
-def create_epub_single(files, output, title):
+def _create_epub_single(files, output, title):
     import pypub
     creator = "Anonymous"
     language = 'cn'
     rights = now()
     publisher = 'Anonymous'
-    print('Creating epub: <%s> chapters:%s' % (title, len(files)))
+    print('Creating epub "%s" include %s chapters' % (title, len(files)))
     book = pypub.Epub(title, creator=creator,
                       language=language, rights=rights,
                       publisher=publisher)
@@ -66,6 +66,11 @@ def create_epub_single(files, output, title):
         book.add_chapter(pypub.create_chapter_from_file(c_file, c_title))
     book.create_epub(output, epub_name=title)
 
+def create_epub_single(files, output, title):
+    p = Process(target=_create_epub_single, args=(files, output, title))
+    p.start()
+    return p
+    # _create_epub_single(files, output, title)
 
 def slice_by_size(all_files, max_size):
     max_size = max_size * SIZE_M
@@ -92,6 +97,7 @@ def create_volumes_by_size(all_files, output, title_prefix, max_size=DEFAULT_BOO
     # files_chunks = slice_list(all_files, max_count)
     files_chunks = slice_by_size(all_files, max_size)
     page_no = 1
+    ps = []
     for i in range(0, len(files_chunks)):
         files = files_chunks[i]
         n = len(files)
@@ -99,7 +105,9 @@ def create_volumes_by_size(all_files, output, title_prefix, max_size=DEFAULT_BOO
         #                                i + 1, page_no, page_no + n)
         title = "%s Vol %s" % (title_prefix, i + 1)
         page_no += n
-        create_epub_single(files, output, title=title)
+        ps.append(create_epub_single(files, output, title=title))
+    for p in filter(None,ps):
+        p.join()
 
 
 def create_epub(src, output, title, max_size=DEFAULT_BOOK_SIZE):
@@ -123,7 +131,9 @@ def create_epub(src, output, title, max_size=DEFAULT_BOOK_SIZE):
     if files_size(files) > max_size * SIZE_M:
         create_volumes_by_size(files, output, title, max_size)
     else:
-        create_epub_single(files, output, title)
+        p = create_epub_single(files, output, title)
+        if p:
+            p.join()
 
 
 def parse_args():
@@ -154,6 +164,9 @@ def main():
     max_size = args.get('size')
     create_epub(src, dst, title, max_size)
 
+def profile():
+    import cProfile
+    cProfile.run('demo()')
 
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
@@ -164,3 +177,5 @@ if __name__ == '__main__':
     from lib.utils import read_file, write_file, read_list, write_list, slice_list, now, files_size
     from lib.utils2 import humanize_bytes
     main()
+    a = ''
+    # profile()

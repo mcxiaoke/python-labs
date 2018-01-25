@@ -9,6 +9,7 @@ import base64
 import json
 import sys
 import os
+import re
 import time
 import shutil
 import random
@@ -21,8 +22,7 @@ OUTPUT = 'ninesong'
 
 
 def get_root_url():
-    return base64.b64decode(ENC_ROOT_URL)
-
+    return compat.to_text(base64.b64decode(ENC_ROOT_URL))
 
 def filter_post_content(tag):
     return tag.name == 'div' and tag.get('class') == ['entry-inner']
@@ -46,13 +46,12 @@ def fetch_post(url, output=os.path.join(OUTPUT, 'posts')):
         soup = commons.soup(url)
         for s in soup.find_all('a'):
             s.decompose()
-        content = soup.find(filter_post_content)
-        content = content.get_text()
-        content.replace('>', ' ')
-        content.replace('<', ' ')
-        content = zhconv.convert(content.get_text(), 'zh-cn')
+        content_tag = soup.find(filter_post_content)
+        content = content_tag.get_text()
         # print('Post %s (%s)' % (post_name, len(content)))
         if content and len(content) > 500:
+            content = re.sub(r'[><&%]','',content)
+            content = zhconv.convert(content, 'zh-cn')
             with codecs.open(post_file, 'w', 'utf-8') as f:
                 f.write(post_name)
                 f.write('\n\n')
@@ -131,6 +130,9 @@ def main():
         fetch_all_posts(max_count=200)
     elif sys.argv[1] == '-da':
         fetch_all_posts()
+    else:
+        print('Usage: %s -r[recent] or -a[all] or -d[download]' % sys.argv[0])
+        exit(1)
 
 
 if __name__ == '__main__':
@@ -139,6 +141,6 @@ if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
     # print(sys.path)
-    from lib import commons
+    from lib import compat, commons
     from lib.utils import read_list, write_list, distinct_list, flatten_list, unquote_url, url_filename
     main()

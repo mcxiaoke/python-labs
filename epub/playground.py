@@ -48,6 +48,16 @@ def main():
             print(line)
             print('-------')
 
+def xhtml_validate():
+    src = os.path.abspath(sys.argv[1])
+    from lxml import etree
+    parser = etree.XMLParser()
+    for name in os.listdir(src):
+        fi = os.path.join(src, name)
+        with open(fi, 'rb') as f:
+            text = f.read()
+        print('Validating %s' % fi)
+        root = etree.fromstring(text, parser)
 
 
 def strip_html_tags():
@@ -55,4 +65,4 @@ def strip_html_tags():
         print(strip_html(f.read()))
 
 if __name__ == '__main__':
-    strip_html_tags()
+    xhtml_validate()

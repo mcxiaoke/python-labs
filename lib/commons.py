@@ -70,9 +70,12 @@ def download(url, output, **options):
     if not os.path.exists(filepath):
         r = requests.get(url, stream=True, 
                     headers=get_headers(url), **options)
-        print('Downloading %s' % url)
         with open(filepath, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
+            print('Downloaded %s' % filepath)
+    else:
+        # print('Exists %s' % filepath)
+        pass
     return filepath
 
 def get(url, encoding=None, **options):

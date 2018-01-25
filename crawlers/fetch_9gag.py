@@ -25,19 +25,19 @@ OUTPUT = 'output-9gag'
 
 def get_image_url(item):
     if item['type'] == 'Animated':
-        return item['image460sv']['url']
+        return item['images']['image460sv']['url']
     elif item['type'] == 'Photo':
         try:
-            return item['image700']['url']
+            return item['images']['image700']['url']
         except Exception as e:
-            return item['image460']['url']
+            traceback.print_exc()
 
 def download_images(items):
     if items:
-        print('Start downloadin %s images' % len(items))
         urls = [get_image_url(item) for item in items]
         urls = filter(None, urls)
         for url in urls:
+            # print('Downloading: %s' % url)
             commons.download(url, OUTPUT)
 
 def download_images_async(items):
@@ -50,7 +50,8 @@ def main():
     data_file = os.path.join(output,'data_%s.json' % int(time.time()))
     root_url = 'https://9gag.com/v1/group-posts/group/gif/type/hot'
     items = []
-    query_next = 'after=aAxYL10%2CaeMNqGO%2CaAxYLwo&c=10'
+    # query_next = 'after=aAxYL10%2CaeMNqGO%2CaAxYLwo&c=10'
+    query_next = None
     # if len(sys.argv) == 2:
     #     if os.path.exists(sys.argv[1]):
     #         old_posts = utils.read_dict(sys.argv[1])
@@ -69,7 +70,6 @@ def main():
         posts = r.json()['data']['posts']
         if not posts:
             break
-        print('Found %s new posts' % len(posts))
         items.extend(posts)
         utils.write_dict(data_file, items)
         download_images_async(posts)

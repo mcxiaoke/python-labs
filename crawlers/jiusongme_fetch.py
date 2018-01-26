@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2018-01-17 11:31:14
-from __future__ import print_function
+from __future__ import print_function, unicode_literals, absolute_import
 import codecs
 import requests
 import base64
@@ -18,7 +18,7 @@ import traceback
 import zhconv
 
 ENC_ROOT_URL = 'aHR0cHM6Ly85c29uZy5tZS8='
-OUTPUT = 'ninesong'
+OUTPUT = 'output-jiusong'
 
 
 def get_root_url():

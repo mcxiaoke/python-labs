@@ -48,7 +48,9 @@ def main():
     if not os.path.exists(output):
         os.mkdir(output)
     data_file = os.path.join(output,'data_%s.json' % int(time.time()))
-    root_url = 'https://9gag.com/v1/group-posts/group/gif/type/hot'
+    # root_url = 'https://9gag.com/v1/group-posts/group/gif/type/hot'
+    # root_url = 'https://9gag.com/v1/group-posts/group/cute/type/hot'
+    root_url = 'https://9gag.com/v1/group-posts/group/comic/type/hot'
     items = []
     # query_next = 'after=aAxYL10%2CaeMNqGO%2CaAxYLwo&c=10'
     query_next = None

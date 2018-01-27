@@ -7,17 +7,21 @@ from datetime import datetime
 import codecs
 import os
 import sys
+import re
 import requests
 import shutil
 import string
 import time
-import json
-import collections
-import json
-from collections import OrderedDict
-from compat import urlparse, unquote, unicode_str, to_text, to_binary
-from const import FILENAME_UNSAFE_CHARS
+import random
+from .compat import json, urlparse, unquote, unicode_str, to_text, to_binary, OrderedDict
 
+RE_WORDS = re.compile(r'<.*?>|((?:\w[-\w]*|&.*?;)+)', re.S)
+RE_CHARS = re.compile(r'<.*?>|(.)', re.S)
+RE_TAG = re.compile(r'<(/)?([^ ]+?)(?:(\s*/)| .*?)?>', re.S)
+RE_NEWLINES = re.compile(r'\r\n|\r')  # Used in normalize_newlines
+RE_CAMEL_CASE = re.compile(r'(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))')
+
+FILENAME_UNSAFE_CHARS = r'[%&:;!<>\\\/\*\?\"\'\|\^\+]'
 
 def import_src(name, fpath):
     import os
@@ -30,37 +34,6 @@ def import_src(name, fpath):
 def now():
     format_str = to_binary('%Y-%m-%d %H:%M:%S')
     return datetime.now().strftime(format_str)
-
-
-def translator(from='', to='', delete='', keep=None):
-    if len(to) == 1:
-        to = to * len(from)
-    trans = string.maketrans(from, to)
-    if keep is not None:
-        allchars = string.maketrans('', '')
-        delete = allchars.translate(allchars, keep.translate(allchars, delete))
-
-    def translate(s):
-        return s.translate(trans, delete)
-    return translate
-
-
-def aes_encrypt(data, secret='P2wH6eFqd8x4abnf'):
-    # https://pypi.python.org/pypi/pycrypto
-    from Crypto.Cipher import AES
-    aes = AES.new(secret, AES.MODE_CBC, b'2017011720370117')
-    if isinstance(data, unicode):
-        data = data.encode('utf-8')
-    if len(data) % 16 != 0:
-        data = data + str((16 - len(data) % 16) * '\0')
-    return aes.encrypt(data)
-
-
-def aes_decrypt(data, secret='P2wH6eFqd8x4abnf'):
-    # https://pypi.python.org/pypi/pycrypto
-    from Crypto.Cipher import AES
-    aes = AES.new(secret, AES.MODE_CBC, b'2017011720370117')
-    return aes.decrypt(data).rstrip('\0')
 
 
 def load_json_preserve_order(s):
@@ -183,7 +156,7 @@ def slice_list(l, n):
 
 
 def distinct_list(source_list, sort=False, reverse=False):
-    result_list = collections.OrderedDict(
+    result_list = OrderedDict(
         (x, True) for x in source_list).keys()
     return sorted(result_list, reverse=reverse) if sort else result_list
 
@@ -291,15 +264,24 @@ def humanize_bytes(n, precision=2):
 #
 ############################################################
 
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
 
-def get_safe_filename(text):
-    # text = text.replace(':', 'x')
-    trans = translator(from=FILENAME_UNSAFE_CHARS, to='_')
-    return trans(text).strip()
-
+def get_safe_filename(s):
+    return re.sub(FILENAME_UNSAFE_CHARS, '_', s)
 
 def url_to_filename(url):
-    return get_safe_filename(urlparse(url).path)
+    filename = os.path.basename(urlparse(url).path)
+    return get_valid_filename(filename)
 
 
 def unquote_url(url):
@@ -317,3 +299,80 @@ def requests_to_curl(r):
     headers = " -H ".join(headers)
     command = "curl -X {method} -H {headers} -d '{data}' '{uri}'"
     return command.format(method=method, headers=headers, data=data, uri=uri)
+
+# Base 36 functions: useful for generating compact URLs
+
+def base36_to_int(s):
+    """
+    Convert a base 36 string to an int. Raise ValueError if the input won't fit
+    into an int.
+    """
+    # To prevent overconsumption of server resources, reject any
+    # base36 string that is longer than 13 base36 digits (13 digits
+    # is sufficient to base36-encode any 64-bit integer)
+    if len(s) > 13:
+        raise ValueError("Base36 input too large")
+    return int(s, 36)
+
+
+def int_to_base36(i):
+    """Convert an integer to a base36 string."""
+    char_set = '0123456789abcdefghijklmnopqrstuvwxyz'
+    if i < 0:
+        raise ValueError("Negative base36 conversion input.")
+    if i < 36:
+        return char_set[i]
+    b36 = ''
+    while i != 0:
+        i, n = divmod(i, 36)
+        b36 = char_set[n] + b36
+    return b36
+
+############################################################
+#
+# Misc Functions
+#
+############################################################
+
+
+def aes_encrypt(data, secret='P2wH6eFqd8x4abnf'):
+    # https://pypi.python.org/pypi/pycrypto
+    from Crypto.Cipher import AES
+    aes = AES.new(secret, AES.MODE_CBC, b'2017011720370117')
+    if isinstance(data, unicode):
+        data = data.encode('utf-8')
+    if len(data) % 16 != 0:
+        data = data + str((16 - len(data) % 16) * '\0')
+    return aes.encrypt(data)
+
+
+def aes_decrypt(data, secret='P2wH6eFqd8x4abnf'):
+    # https://pypi.python.org/pypi/pycrypto
+    from Crypto.Cipher import AES
+    aes = AES.new(secret, AES.MODE_CBC, b'2017011720370117')
+    return aes.decrypt(data).rstrip('\0')
+
+
+def salted_hmac(key_salt, value, secret=None):
+    """
+    Return the HMAC-SHA1 of 'value', using a key generated from key_salt and a
+    secret (which defaults to settings.SECRET_KEY).
+    A different key_salt should be passed in for every application of HMAC.
+    """
+    if secret is None:
+        secret = settings.SECRET_KEY
+
+    key_salt = force_bytes(key_salt)
+    secret = force_bytes(secret)
+
+    # We need to generate a derived key from our base key.  We can do this by
+    # passing the key_salt and our base key through a pseudo-random function and
+    # SHA1 works nicely.
+    key = hashlib.sha1(key_salt + secret).digest()
+
+    # If len(key_salt + secret) > sha_constructor().block_size, the above
+    # line is redundant and could be replaced by key = key_salt + secret, since
+    # the hmac module does the same thing for keys longer than the block size.
+    # However, we need to ensure that we *always* do this.
+    return hmac.new(key, msg=force_bytes(value), digestmod=hashlib.sha1)
+

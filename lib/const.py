@@ -16,7 +16,6 @@ URL_SAFE = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 IRI_UNSAFE = ASCII_CHARS - URL_SAFE
 
 DEFAULT_REQUEST_TIMEOUT = 30
-FILENAME_UNSAFE_CHARS = '/\\<>:&?*"|'
 USER_AGENT_OSX = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
 USER_AGENT_WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36 Edge/15.15063'
 USER_AGENT_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_2 like Mac OS X) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0 Mobile/15C202 Safari/604.1'

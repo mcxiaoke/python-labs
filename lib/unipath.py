@@ -3,7 +3,8 @@
 from __future__ import unicode_literals, division, absolute_import, print_function
 import sys
 import os
-from const import PY2
+
+PY2 = sys.version_info[0] == 2
 
 if PY2:
     _text_type = unicode

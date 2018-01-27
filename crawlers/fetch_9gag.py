@@ -15,9 +15,10 @@ import shutil
 import random
 import argparse
 import traceback
-import json
-import thread
+import logging
 from concurrent.futures import ThreadPoolExecutor
+
+logging.basicConfig(level=logging.ERROR)
 
 pool = ThreadPoolExecutor(max_workers=8) 
 
@@ -34,11 +35,10 @@ def get_image_url(item):
 
 def download_images(items):
     if items:
-        urls = [get_image_url(item) for item in items]
-        urls = filter(None, urls)
+        urls = filter(None, [get_image_url(item) for item in items])
         for url in urls:
-            # print('Downloading: %s' % url)
-            commons.download(url, OUTPUT)
+            print('Downloading: %s' % url)
+            download_file(url, output=OUTPUT)
 
 def download_images_async(items):
     pool.submit(download_images, items)
@@ -52,21 +52,9 @@ def main():
     # root_url = 'https://9gag.com/v1/group-posts/group/cute/type/hot'
     root_url = 'https://9gag.com/v1/group-posts/group/comic/type/hot'
     items = []
-    # query_next = 'after=aAxYL10%2CaeMNqGO%2CaAxYLwo&c=10'
     query_next = None
-    # if len(sys.argv) == 2:
-    #     if os.path.exists(sys.argv[1]):
-    #         old_posts = utils.read_dict(sys.argv[1])
-    #         if old_posts and len(old_posts) > 0:
-    #             print('Old posts count=%s' % len(old_posts))
-    #             download_images_async(old_posts)
-    #             item = old_posts[-1]
-    #             query_next = ('after=%s&c=10' % item['id'])
-    #             items.extend(old_posts)
-    #     else:
-    #         exit(233)
     url = '%s?%s' % (root_url, query_next or '')
-    r = commons.get(url)
+    r = get(url)
     print('Page: %s' % url)
     while r.status_code < 300:
         posts = r.json()['data']['posts']
@@ -80,7 +68,7 @@ def main():
             url = '%s?%s' % (root_url, query_next)
             print('Page: %s' % url)
             try:
-                r = commons.get(url)
+                r = get(url)
             except Exception as e:
                 traceback.print_exc()
             
@@ -89,5 +77,7 @@ def main():
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
-    from lib import compat, commons, utils
+    from lib import utils
+    from lib.compat import json
+    from lib.commons import download_file, get
     main()

@@ -8,8 +8,8 @@ import sys
 import os
 import codecs
 import types
-
-from const import PY2, PY3, PY35, PYPY, OS_WIN, ASCII_CHARS, URL_SAFE, IRI_UNSAFE
+from . import unipath as path
+from .const import PY2, PY3, PY35, PYPY, OS_WIN, ASCII_CHARS, URL_SAFE, IRI_UNSAFE
 
 def _add_doc(func, doc):
     """Add documentation to a function."""
@@ -69,7 +69,7 @@ if PY2:
     import cookielib
     from Cookie import Morsel
     from StringIO import StringIO
-    import unipath as path
+    
 else:
     from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote, quote_plus, unquote_plus, urldefrag, parse_qs
     from urllib.request import parse_http_list, getproxies, proxy_bypass, proxy_bypass_environment, getproxies_environment, urlopen, Request
@@ -77,7 +77,6 @@ else:
     from http.cookies import Morsel
     from urllib.error import HTTPError
     from io import StringIO
-    from os import path
 
 if PY2:
     from ConfigParser import ConfigParser

@@ -15,11 +15,9 @@ import bs4
 from lxml import html
 from multiprocessing import Pool
 
-from const import USER_AGENT_WIN, DEFAULT_REQUEST_TIMEOUT
-from compat import urlparse, json
-from utils import url_to_filename
-
-logging.basicConfig(level=logging.DEBUG)
+from .const import USER_AGENT_WIN, DEFAULT_REQUEST_TIMEOUT
+from .compat import urlparse, json
+from .utils import url_to_filename
 
 ############################################################
 #
@@ -31,6 +29,7 @@ default_timeout = DEFAULT_REQUEST_TIMEOUT
 
 
 def get_headers(url):
+    u = urlparse(url)
     return {
         'Referer': '{0}://{1}/'.format(u.scheme, u.netloc),
         'User-Agent': '%s %s' % (USER_AGENT_WIN, time.time())
@@ -70,10 +69,13 @@ def soup(url, encoding=None, clean=False):
 
 
 def download_file(url, filename=None, output=None, **kwargs):
+
     filename = filename or url_to_filename(url)
-    output = output or ''
+    output = output or '.'
     if not os.path.exists(output):
         os.mkdir(output)
+    logging.info('download_file url=%s, filename=%s, output=%s'
+                 % (url, filename, output))
     filepath = os.path.join(output, filename)
     if not os.path.exists(filepath):
         r = get_stream(url, **kwargs)
@@ -89,6 +91,8 @@ def download_file(url, filename=None, output=None, **kwargs):
 # Thread and Process Functions
 #
 ############################################################
+
+
 def run_in_thread(func, *args, **kwargs):
     """Run function in thread, return a Thread object"""
     from threading import Thread
@@ -105,6 +109,7 @@ def run_in_subprocess(func, *args, **kwargs):
     thread.daemon = True
     thread.start()
     return thread
+
 
 def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
     def _initializer():

@@ -13,7 +13,7 @@ import shutil
 import time
 import json
 import collections
-from . import compat
+from .compat import unquote, unicode_str, to_text, to_binary
 
 def run_in_thread(func, *args, **kwargs):
     """Run function in thread, return a Thread object"""
@@ -61,7 +61,7 @@ def url_filename(url):
 
 
 def unquote_url(url):
-    return compat.unquote(url)
+    return unquote(url)
 
 
 def requests_to_curl(r):
@@ -103,7 +103,7 @@ def get_current_user():
 
 
 def now():
-    format_str = compat.unicode_str('%Y-%m-%d %H:%M:%S')
+    format_str = to_binary('%Y-%m-%d %H:%M:%S')
     return datetime.now().strftime(format_str)
 
 def slice_list(l, n):
@@ -131,14 +131,14 @@ def write_file(name, data):
     if not data:
         return
     with codecs.open(name, 'w', 'utf-8') as f:
-        f.write(data)
+        f.write(to_text(data))
 
 
 def read_file(name):
     if not os.path.isfile(name):
         return None
     with codecs.open(name, 'r', 'utf-8') as f:
-        return f.read()
+        return to_text(f.read())
 
 def file_size(src):
     total_size = 0

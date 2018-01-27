@@ -63,7 +63,10 @@ def safe_rename(src, dst):
         if os.path.exists(src):
             os.remove(src)
 
-def download(url, output, **options):
+def download(url, output=None, **options):
+    output = output or ''
+    if not os.path.exists(output):
+        os.mkdir(output)
     filename = os.path.basename(url)
     filename = get_safe_filename(filename)
     filepath = os.path.join(output, filename)

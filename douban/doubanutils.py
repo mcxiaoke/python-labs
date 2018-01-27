@@ -2,7 +2,7 @@
 # @Author: mcxiaoke
 # @Date:   2018-01-16 13:40:26
 # @Last Modified by:   mcxiaoke
-from __future__ import print_function
+from __future__ import print_function, unicode_literals, absolute_import
 import codecs
 import requests
 import base64
@@ -14,10 +14,15 @@ import shutil
 import random
 import argparse
 import traceback
-from utils import read_list, write_list
 from doubanapi import ApiClient
 
-api = ApiClient()
+sys.path.insert(1, os.path.dirname(
+    os.path.dirname(os.path.realpath(__file__))))
+from lib.utils import read_list, write_list, get_user_home
+
+token_file = os.path.join(get_user_home(), '.douban_token.dat')
+
+api = ApiClient(token_file=token_file)
 
 
 def upload_photos_to_album(album_id, photos):
@@ -46,10 +51,10 @@ def upload_photos_to_album(album_id, photos):
                 time.sleep(random.randint(1, 3))
             else:
                 print('Skip %s' % image)
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt as e:
             print("User interrupt, quit.")
             raise
-        except Exception, e:
+        except Exception as e:
             print("Error:%s On uploading :%s" % (e, image))
             traceback.print_exc()
             error_count += 1

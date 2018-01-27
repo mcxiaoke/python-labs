@@ -9,7 +9,6 @@ import json
 import sys
 import os
 import codecs
-import utils
 
 TOKEN_FILENAME = '.douban.token.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
@@ -23,6 +22,30 @@ DFD_EUA_FRODO = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vNS4xOC4wLjAoOTgpIEFuZHJ
 DFD_EUA_SHUO = 'YXBpLWNsaWVudC8yLjMuMCBjb20uZG91YmFuLnNodW8vMi4yLjUoMTIxKSBBbmRyb2lkLzIxIGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRX'
 UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
 
+def write_dict(name, dt):
+    if not dt:
+        return
+    with codecs.open(name, 'w', 'utf-8') as f:
+        json.dump(dt, f)
+
+
+def read_dict(name):
+    if not os.path.isfile(name):
+        return {}
+    with codecs.open(name, 'r', 'utf-8') as f:
+        return json.load(f)
+
+def request_to_curl(r):
+    req = r.request
+    method = req.method
+    uri = req.url
+    ct = req.headers.get('Content-Type')
+    data = '[multipart]' if ct and 'multipart/form-data' in ct else (
+        req.body or '')
+    headers = ["'{0}: {1}'".format(k, v) for k, v in req.headers.items()]
+    headers = " -H ".join(headers)
+    command = "curl -X {method} -H {headers} -d '{data}' '{uri}'"
+    return command.format(method=method, headers=headers, data=data, uri=uri)
 
 def need_login(func):
     def wrapper(*args, **kwargs):
@@ -44,11 +67,13 @@ class ApiClient(object):
 
     def __init__(self, host=API_DOMAIN,
                  key=base64.b64decode(DFD_EKEY),
-                 secret=base64.b64decode(DFD_ESECRET)):
+                 secret=base64.b64decode(DFD_ESECRET),
+                 token_file=TOKEN_FILENAME):
         self.debug = False
         self.host = host
         self.key = key
         self.secret = secret
+        self.token_file = token_file
         self.redirect_uri = base64.b64decode(DFD_REDIRECT)
         self.ua = base64.b64decode(DFD_EUA_SHUO)
         self.udid = UDID
@@ -63,9 +88,8 @@ class ApiClient(object):
             self._log_print('ApiClient()')
 
     def _read_token(self):
-        token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
-        if os.path.exists(token_file):
-            res = utils.read_dict(token_file)
+        if os.path.exists(self.token_file):
+            res = read_dict(self.token_file)
             if res:
                 self.id = res.get('douban_user_id')
                 self.tk = res.get('access_token')
@@ -73,8 +97,7 @@ class ApiClient(object):
 
     def _write_token(self, res):
         if self.is_authorized() and res:
-            token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
-            utils.write_dict(token_file, res)
+            write_dict(self.token_file, res)
             return True
 
     def check_login(self):
@@ -84,8 +107,8 @@ class ApiClient(object):
             except Exception as e:
                 USERNAME = None
                 PASSWORD = None
-            username = USERNAME or raw_input('Username: ')
-            password = PASSWORD or raw_input('Password: ')
+            username = USERNAME or input('Username: ')
+            password = PASSWORD or input('Password: ')
             if username and password:
                 print('login using %s:%s' % (username, password))
                 self.login(username, password)
@@ -100,16 +123,15 @@ class ApiClient(object):
     def logout(self):
         self.id = None
         self.tk = None
-        token_file = os.path.join(utils.get_user_home(), TOKEN_FILENAME)
-        if os.path.exists(token_file):
-            os.remove(token_file)
+        if os.path.exists(self.token_file):
+            os.remove(self.token_file)
 
     def _log_print(self, message):
         if self.debug:
             print(message)
 
     def log_request(self, r):
-        self._log_print('[Request] {}'.format(utils.requests_to_curl(r)))
+        self._log_print('[Request] {}'.format(request_to_curl(r)))
         self._log_print('[Response] {} {} ({}:{})'.
                         format(r.request.method, r.url, r.status_code, r.reason))
 
@@ -156,7 +178,7 @@ class ApiClient(object):
         return self.id and self.tk
 
     def login(self, username, password):
-        payload = {
+        data = {
             'client_id': self.key,
             'client_secret': self.secret,
             'redirect_uri': self.redirect_uri,
@@ -164,7 +186,7 @@ class ApiClient(object):
             'username': username,
             'password': password
         }
-        res = self._post_url(AUTH_TOKEN_URL, payload=payload)
+        res = self._post_url(AUTH_TOKEN_URL, data=data)
         if res:
             self.id = res.get('douban_user_id')
             self.tk = res.get('access_token')

@@ -1,4 +1,5 @@
-from .compat import OS_WIN, PY2
+from __future__ import unicode_literals, division, absolute_import, print_function
+from const import OS_WIN, PY2
 
 def log(s):
     if OS_WIN and PY2:

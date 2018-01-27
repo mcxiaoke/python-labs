@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
-# @Date:   2015-08-18 20:14:05
-from __future__ import print_function
+# @Date: 2015-08-18 20:14:05
+from __future__ import unicode_literals, division, absolute_import, print_function
 import requests
-import json
 import shutil
 import sys
 import signal
@@ -14,16 +13,7 @@ import time
 from requests import exceptions
 from bs4 import BeautifulSoup
 from multiprocessing import Pool, Lock
-from multiprocessing.dummy import Pool as ThreadPool
-from .compat import urlparse
-
-class HTTPError(Exception):
-    def __init__(self, message, code):
-        # Call the base class constructor with the parameters it needs
-        super(HTTPError, self).__init__(message)
-        # Now for your custom code...
-        self.code = code
-
+from compat import urlparse, json
 
 DEFAULT_TIMEOUT = 30
 FILENAME_UNSAFE_CHARS = '/\\<>:?*"|'
@@ -33,10 +23,8 @@ USER_AGENT_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_2 like Mac OS X) Ap
 
 is_mobile = False
 
-
 def get_user_agent():
     return USER_AGENT_MOBILE if is_mobile else USER_AGENT_WIN
-
 
 def get_headers(url):
     headers = {}
@@ -45,14 +33,12 @@ def get_headers(url):
     headers['User-Agent'] = '%s %s' % (get_user_agent(), time.time())
     return headers
 
-
 def get_safe_filename(text):
     # text = text.replace(':', 'x')
     for c in FILENAME_UNSAFE_CHARS:
         if c in text:
             text = text.replace(c, "_")
     return text.strip()
-
 
 def safe_rename(src, dst):
     try:
@@ -75,10 +61,7 @@ def download(url, output=None, **options):
                     headers=get_headers(url), **options)
         with open(filepath, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-            print('Downloaded %s' % filepath)
-    else:
-        # print('Exists %s' % filepath)
-        pass
+            print('Downloaded %s' % url)
     return filepath
 
 def get(url, encoding=None, **options):

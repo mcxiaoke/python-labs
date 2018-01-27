@@ -1,5 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, division, absolute_import, print_function
-
 import functools
 import itertools
 import operator
@@ -8,6 +9,7 @@ import os
 import codecs
 import types
 
+from const import PY2, PY3, PY35, PYPY, OS_WIN, ASCII_CHARS, URL_SAFE, IRI_UNSAFE
 
 def _add_doc(func, doc):
     """Add documentation to a function."""
@@ -18,20 +20,6 @@ def _import_module(name):
     """Import module, returning the module after the last dot."""
     __import__(name)
     return sys.modules[name]
-
-
-# Useful for very coarse version differentiation.
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-PY35 = sys.version_info[0:2] >= (3, 5)
-PYPY = 'pypy' in sys.version.lower()
-OS_WIN = 'win32' in str(sys.platform).lower()
-
-ASCII_CHARS = set(chr(x) for x in range(128))
-URL_SAFE = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-               'abcdefghijklmnopqrstuvwxyz'
-               '0123456789' '#' '_.-/~')
-IRI_UNSAFE = ASCII_CHARS - URL_SAFE
 
 if PY2:
     string_types = basestring,
@@ -81,7 +69,7 @@ if PY2:
     import cookielib
     from Cookie import Morsel
     from StringIO import StringIO
-    from urllib3.packages.ordered_dict import OrderedDict
+    import unipath as path
 else:
     from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote, quote_plus, unquote_plus, urldefrag, parse_qs
     from urllib.request import parse_http_list, getproxies, proxy_bypass, proxy_bypass_environment, getproxies_environment, urlopen, Request
@@ -89,7 +77,7 @@ else:
     from http.cookies import Morsel
     from urllib.error import HTTPError
     from io import StringIO
-    from collections import OrderedDict
+    from os import path
 
 if PY2:
     from ConfigParser import ConfigParser
@@ -98,13 +86,14 @@ if PY2:
     from UserDict import UserDict
     from UserList import UserList
     from UserString import UserString
+    from urllib3.packages.ordered_dict import OrderedDict
 else:
     from configparser import ConfigParser
     from queue import Queue
     import heapq
     from collections import deque
     from reprlib import aRepr, repr
-    from collections import UserDict, UserList, UserString
+    from collections import UserDict, UserList, UserString, OrderedDict
 
 if PY2:
     import __builtin__
@@ -410,3 +399,10 @@ def unicode_argv():
             else:
                 argv.append(arg.decode(argvencoding))
         return argv
+
+
+def main():
+    print(path.pathof(sys.argv[1]))
+
+if __name__ == '__main__':
+    main()

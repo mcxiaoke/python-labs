@@ -76,14 +76,14 @@ if PY2:
     from urllib import (
         quote, unquote, quote_plus, unquote_plus, urlencode, getproxies,
         proxy_bypass, proxy_bypass_environment, getproxies_environment)
-    from urlparse import urlparse, urlunparse, urljoin, urlsplit, urldefrag
+    from urlparse import urlparse, urlunparse, urljoin, urlsplit, urldefrag, parse_qs
     from urllib2 import parse_http_list, urlopen, Request, HTTPError
     import cookielib
     from Cookie import Morsel
     from StringIO import StringIO
     from urllib3.packages.ordered_dict import OrderedDict
 else:
-    from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote, quote_plus, unquote_plus, urldefrag
+    from urllib.parse import urlparse, urlunparse, urljoin, urlsplit, urlencode, quote, unquote, quote_plus, unquote_plus, urldefrag, parse_qs
     from urllib.request import parse_http_list, getproxies, proxy_bypass, proxy_bypass_environment, getproxies_environment, urlopen, Request
     from http import cookiejar as cookielib
     from http.cookies import Morsel

@@ -24,8 +24,9 @@ sys.path.insert(1, os.path.dirname(
     os.path.dirname(os.path.realpath(__file__))))
 from lib.compat import urlparse
 from lib.utils import (read_list, write_list, read_dict,
-                       write_dict, get_user_home, 
-                       get_valid_filename)
+                       write_dict, write_file, read_file,
+                       distinct_list, 
+                       get_user_home, get_valid_filename)
 from lib.commons import download_file, ThreadPoolExecutorStackTraced
 from lib.structures import to_obj, to_dict
 
@@ -46,13 +47,16 @@ def _get_album_output(album):
     album_obj = to_obj(album)
     album_id = album_obj.id
     album_name = get_valid_filename(album_obj.title)
-    return os.path.join(OUTPUT_ROOT, 'albums','%s_%s' % (album_name, album_id))
+    return os.path.join(OUTPUT_ROOT, 'albums', '%s_%s' % (album_name, album_id))
+
 
 def _get_doulist_output():
     return os.path.join(OUTPUT_ROOT, 'doulist')
 
+
 def _get_user_output():
     return os.path.join(OUTPUT_ROOT, 'user')
+
 
 def _compat_album_id(param):
     # compat for param is album url
@@ -61,12 +65,14 @@ def _compat_album_id(param):
     else:
         return param
 
+
 def _compat_doulist_id(param):
     # compat for param is doulist url
     if '/doulist/' in param:
         album_id = doubanweb.get_id_from_doulist_url(param)
     else:
         return param
+
 
 def upload_photos_to_album(album_id, photos):
     album_id = _compat_album_id(album_id)
@@ -99,7 +105,8 @@ def upload_photos_to_album(album_id, photos):
             logger.warning("upload_photos_to_album user interrupt, quit.")
             raise
         except Exception as e:
-            logger.warning("upload_photos_to_album error:%s on uploading :%s" % (e, image))
+            logger.warning(
+                "upload_photos_to_album error:%s on uploading :%s" % (e, image))
             traceback.print_exc()
             error_count += 1
             if error_count > 5:
@@ -120,15 +127,16 @@ def _fetch_album_photos(album_id):
         if not new_photos:
             break
         logger.info('fetch_album_photos %s new photos found in %s'
-                     % (len(new_photos), album_id))
+                    % (len(new_photos), album_id))
         # new_urls = [p.get('large') or p.get('image') for p in photos]
         photos.extend(new_photos)
-        if len(photos) < count/2:
+        if len(photos) < count / 2:
             break
     logger.info('fetch_album_photos %s photos found in %s'
-                 % (len(photos), album_id))
+                % (len(photos), album_id))
     data['photos'] = photos
     return data
+
 
 def get_album_photos(album_id):
     # https://api.douban.com/v2/album/1622166069/photos
@@ -145,8 +153,9 @@ def get_album_photos(album_id):
             write_dict(data_file, data)
     return data
 
+
 def download_album_photos(album_id, output=None, async_mode=True):
-    data  = get_album_photos(album_id)
+    data = get_album_photos(album_id)
     album = data['album']
     photos = data['photos']
     output = os.path.abspath(output or _get_album_output(album))
@@ -157,6 +166,7 @@ def download_album_photos(album_id, output=None, async_mode=True):
         return [executor.submit(download_file, url, output=output) for url in urls]
     else:
         return [download_file(url, output=output) for url in urls]
+
 
 def get_albums_in_doulist(doulist_id):
     doulist_id = _compat_doulist_id(doulist_id)
@@ -173,13 +183,17 @@ def get_albums_in_doulist(doulist_id):
             write_dict(data_file, albums)
     return albums
 
+
 def get_albums_in_all_doulist(doulist_ids):
     for did in doulist_ids:
         get_albums_in_doulist(did)
 
+
 def combine_doulist_albums():
     data_file = os.path.join(OUTPUT_ROOT, 'doulist_albums.json')
+    id_file = os.path.join(OUTPUT_ROOT, 'doulist_album_ids.json')
     all_albums = []
+    all_ids = []
     output = _get_doulist_output()
     for name in os.listdir(output):
         if not name.endswith('.dat'):
@@ -189,9 +203,13 @@ def combine_doulist_albums():
         if albums:
             print('Combine %s (%s)' % (filename, len(albums)))
             all_albums.extend(albums)
+            all_ids.extend([doubanweb.get_id_from_album_url(a[0]) for a in albums])
+    all_albums = sorted(all_albums, key=lambda x: x[0])
+    all_ids = distinct_list(all_ids, sort=True)
     write_dict(data_file, all_albums)
+    write_file(id_file, ','.join(all_ids))
     print('Combined file: %s (%s)' % (data_file, len(all_albums)))
-    
+
 
 if __name__ == '__main__':
     # from albums_data import NEW_IDS as ids

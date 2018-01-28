@@ -9,6 +9,7 @@ import json
 import sys
 import os
 import codecs
+import logging
 
 TOKEN_FILENAME = '.douban.token.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
@@ -21,6 +22,8 @@ DFD_REDIRECT = 'aHR0cHM6Ly93d3cuZG91YmFuLmNvbS9hY2NvdW50cy9hdXRoMl9yZWRpcj91cmw9
 DFD_EUA_FRODO = 'YXBpLWNsaWVudC8xIGNvbS5kb3ViYW4uZnJvZG8vNS4xOC4wLjAoOTgpIEFuZHJvaWQvMjEgY2FuY3JvX3djX2x0ZSBYaWFvbWkgTUkgNFcgIHJvbTptaXVpNg=='
 DFD_EUA_SHUO = 'YXBpLWNsaWVudC8yLjMuMCBjb20uZG91YmFuLnNodW8vMi4yLjUoMTIxKSBBbmRyb2lkLzIxIGNhbmNyb193Y19sdGUgWGlhb21pIE1JIDRX'
 UDID = '593d6cbdb087edc6ab268d38e96d1b94b44b8d72'
+
+logger = logging.getLogger('doubanapi')
 
 def write_dict(name, dt):
     if not dt:
@@ -130,8 +133,10 @@ class ApiClient(object):
         if self.debug:
             print(message)
 
-    def log_request(self, r):
-        self._log_print('[Request] {}'.format(request_to_curl(r)))
+    def log_request(self, method, url):
+        self._log_print('[Request] %s %s' % (method, url))
+
+    def log_response(self, r):
         self._log_print('[Response] {} {} ({}:{})'.
                         format(r.request.method, r.url, r.status_code, r.reason))
 
@@ -145,8 +150,9 @@ class ApiClient(object):
             params = {}
         params['apikey'] = self.key
         params['udid'] = self.udid
+        self.log_request('GET', url)
         r = requests.get(url, params=params, headers=headers, **options)
-        self.log_request(r)
+        self.log_response(r)
         if r.status_code >= 400:
             print(r.text)
         return r.json()
@@ -161,9 +167,10 @@ class ApiClient(object):
             params = {}
         params['apikey'] = self.key
         params['udid'] = self.udid
+        self.log_request('POST', url)
         r = requests.post(url,
                           params=params, headers=headers, **options)
-        self.log_request(r)
+        self.log_response(r)
         if r.status_code >= 400:
             print(r.text)
         return r.json()
@@ -198,27 +205,27 @@ class ApiClient(object):
 
     def album_info(self, id):
         # GET /photo_album/:id
-        return self._get('/photo_album/%s' % id)
+        return self._get('/album/%s' % id)
 
     @need_login
     def album_like(self, id):
         # POST/photo_album/:id/like
-        return self._post('/photo_album/%s/like' % id)
+        return self._post('/album/%s/like' % id)
 
     @need_login
     def album_unlike(self, id):
         # POST /photo_album/:id/unlike
-        return self._post('/photo_album/%s/unlike' % id)
+        return self._post('/album/%s/unlike' % id)
 
     def album_photos(self, id, start=0, count=20):
         # GET /photo_album/:id/photos?start=&count=
         params = {'start': start, 'count': count}
-        return self._get('/photo_album/%s/photos' % id, params)
+        return self._get('/album/%s/photos' % id, params)
 
     def user_albums(self, id, start=0, count=20):
         # GET /user/:id/photo_albums?start=&count=
         params = {'start': start, 'count': count}
-        return self._get('/user/%s/photo_albums' % id, params)
+        return self._get('/album/user_created/%s' % id, params)
 
     def user_notes(self, id, start=0, count=20):
         # GET /user/:id/notes?start=&count=

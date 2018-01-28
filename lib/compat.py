@@ -37,6 +37,7 @@ if PY2:
     long = long
     builtin_str = str
 
+    raw_input = raw_input
     MAXSIZE = int((1 << 31) - 1)
 else:
     string_types = str,
@@ -58,6 +59,7 @@ else:
     long = int
     builtin_str = str
 
+    raw_input = input
     MAXSIZE = sys.maxsize
 
 if PY2:

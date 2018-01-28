@@ -13,7 +13,7 @@ import shutil
 import string
 import time
 import random
-from .compat import json, urlparse, unquote, unicode_str, to_text, to_binary, OrderedDict
+from .compat import basestring, json, urlparse, unquote, unicode_str, to_text, to_binary, OrderedDict
 
 RE_WORDS = re.compile(r'<.*?>|((?:\w[-\w]*|&.*?;)+)', re.S)
 RE_CHARS = re.compile(r'<.*?>|(.)', re.S)
@@ -22,6 +22,7 @@ RE_NEWLINES = re.compile(r'\r\n|\r')  # Used in normalize_newlines
 RE_CAMEL_CASE = re.compile(r'(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))')
 
 FILENAME_UNSAFE_CHARS = r'[%&:;!<>\\\/\*\?\"\'\|\^\+]'
+
 
 def import_src(name, fpath):
     import os
@@ -147,6 +148,9 @@ def sanitize_path(s):
 #
 ############################################################
 
+def pprint(obj):
+    print(json.dumps(obj, ensure_ascii=False,
+                  indent=2, sort_keys=True))
 
 def slice_list(l, n):
     """Yield successive n-sized chunks from l."""
@@ -222,18 +226,28 @@ def files_size(files):
     return sum([os.path.getsize(f) for f in files])
 
 
-def write_dict(name, dt):
-    if not dt:
+def write_json(filename, data):
+    if not data:
         return
-    with codecs.open(name, 'w', 'utf-8') as f:
-        json.dump(dt, f)
+    with codecs.open(filename, 'w', 'utf-8') as f:
+        json.dump(data, f, ensure_ascii=False,
+                  indent=4, sort_keys=True)
 
 
-def read_dict(name):
-    if not os.path.isfile(name):
+def read_json(filename):
+    if not os.path.isfile(filename):
         return {}
-    with codecs.open(name, 'r', 'utf-8') as f:
+    with codecs.open(filename, 'r', 'utf-8') as f:
         return json.load(f)
+
+
+def write_dict(filename, data):
+    return write_json(filename, data)
+
+
+def read_dict(filename):
+    return read_json(filename)
+
 
 def humanize_bytes(n, precision=2):
     # Author: Doug Latornell
@@ -264,6 +278,7 @@ def humanize_bytes(n, precision=2):
 #
 ############################################################
 
+
 def get_valid_filename(s):
     """
     Return the given string converted to a string that can be used for a clean
@@ -273,14 +288,22 @@ def get_valid_filename(s):
     >>> get_valid_filename("john's portrait in 2004.jpg")
     'johns_portrait_in_2004.jpg'
     """
-    s = str(s).strip().replace(' ', '_')
+    s = to_text(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', s)
+
 
 def get_safe_filename(s):
     return re.sub(FILENAME_UNSAFE_CHARS, '_', s)
 
+
+def get_url_last_path(url):
+    if url.endswith('/'):
+        url = url[:-1]
+    return os.path.basename(urlparse(url).path)
+
+
 def url_to_filename(url):
-    filename = os.path.basename(urlparse(url).path)
+    filename = get_url_last_path(url)
     return get_valid_filename(filename)
 
 
@@ -301,6 +324,7 @@ def requests_to_curl(r):
     return command.format(method=method, headers=headers, data=data, uri=uri)
 
 # Base 36 functions: useful for generating compact URLs
+
 
 def base36_to_int(s):
     """
@@ -375,4 +399,3 @@ def salted_hmac(key_salt, value, secret=None):
     # the hmac module does the same thing for keys longer than the block size.
     # However, we need to ensure that we *always* do this.
     return hmac.new(key, msg=force_bytes(value), digestmod=hashlib.sha1)
-

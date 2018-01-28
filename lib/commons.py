@@ -13,18 +13,22 @@ import time
 import logging
 import bs4
 from lxml import html
+from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
+from fake_useragent import UserAgent
 
 from .const import USER_AGENT_WIN, DEFAULT_REQUEST_TIMEOUT
-from .compat import urlparse, json
+from .compat import urlparse, json, basestring
 from .utils import url_to_filename
+
+logger = logging.getLogger('commons')
 
 ############################################################
 #
 # Network Functions
 #
 ############################################################
-
+random_ua = UserAgent()
 default_timeout = DEFAULT_REQUEST_TIMEOUT
 
 
@@ -32,7 +36,8 @@ def get_headers(url):
     u = urlparse(url)
     return {
         'Referer': '{0}://{1}/'.format(u.scheme, u.netloc),
-        'User-Agent': '%s %s' % (USER_AGENT_WIN, time.time())
+        'User-Agent': '%s' % random_ua.chrome
+        # 'User-Agent': '%s %s' % (USER_AGENT_WIN, time.time())
     }
 
 
@@ -40,8 +45,9 @@ def request(method, url, encoding=None, **kwargs):
     r = requests.request(method, url, timeout=default_timeout,
                          headers=get_headers(url), **kwargs)
     r.encoding = encoding or 'utf-8'
+    print(type(r.text))
     if r.status_code >= 400:
-        raise IOError("HTTP Status Code %s" % r.status_code)
+        raise IOError("HTTP %s [%s]" % (r.status_code, r.url))
     return r
 
 
@@ -68,22 +74,23 @@ def soup(url, encoding=None, clean=False):
     return bs4.BeautifulSoup(text, 'html.parser')
 
 
-def download_file(url, filename=None, output=None, **kwargs):
-
+def download_file(url, output=None, filename=None, **kwargs):
+    assert isinstance(url, basestring), 'url must be basestring'
+    assert not filename or isinstance(filename, basestring), 'filename must be None or basestring'
+    assert not output or isinstance(output, basestring), 'output must be None or basestring'
     filename = filename or url_to_filename(url)
-    output = output or '.'
+    output = output or 'output'
     if not os.path.exists(output):
-        os.mkdir(output)
-    logging.info('download_file url=%s, filename=%s, output=%s'
-                 % (url, filename, output))
+        os.makedirs(output)
     filepath = os.path.join(output, filename)
+    logger.debug('download_file from=%s, to=%s' % (url, filepath))
     if not os.path.exists(filepath):
         r = get_stream(url, **kwargs)
         with open(filepath, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-            logging.info('Saved %s' % url)
+            logger.info('download_file saved %s' % url)
     else:
-        logging.info('Skip %s' % url)
+        logger.info('download_file skip %s' % url)
     return filepath
 
 ############################################################
@@ -92,6 +99,23 @@ def download_file(url, filename=None, output=None, **kwargs):
 #
 ############################################################
 
+class ThreadPoolExecutorStackTraced(ThreadPoolExecutor):
+    #https://stackoverflow.com/questions/19309514
+    def submit(self, fn, *args, **kwargs):
+        """Submits the wrapped function instead of `fn`"""
+
+        return super(ThreadPoolExecutorStackTraced, self).submit(
+            self._function_wrapper, fn, *args, **kwargs)
+
+    def _function_wrapper(self, fn, *args, **kwargs):
+        """Wraps `fn` in order to preserve the traceback of any kind of
+        raised exception
+        """
+        try:
+            return fn(*args, **kwargs)
+        except Exception:
+            # Creates an exception of the same type with the traceback as message
+            raise sys.exc_info()[0](traceback.format_exc())
 
 def run_in_thread(func, *args, **kwargs):
     """Run function in thread, return a Thread object"""
@@ -122,7 +146,7 @@ def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
             r = pool.map_async(func, args)
             r.get(999999)
             pool.close()
-            logging.info('Task execution completely.')
+            logger.info('Task execution completely.')
             break
         except KeyboardInterrupt as e:
             logging.info('Task terminated by user.', e)
@@ -134,7 +158,7 @@ def run_in_pool(func, args, pool_size=4, retry_max=0, sleep=60):
             traceback.print_exc()
             if retry <= retry_max:
                 next_delay = sleep * (retry % 6 + 1)
-                logging.info('Task error: {0}, {1} retry in {2}s'.format(
+                logger.info('Task error: {0}, {1} retry in {2}s'.format(
                     e, retry_max - retry, next_delay))
                 time.sleep(sleep * next_delay)
         finally:

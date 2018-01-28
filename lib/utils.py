@@ -289,11 +289,7 @@ def get_valid_filename(s):
     'johns_portrait_in_2004.jpg'
     """
     s = to_text(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '', s)
-
-
-def get_safe_filename(s):
-    return re.sub(FILENAME_UNSAFE_CHARS, '_', s)
+    return re.sub(r'(?u)[^-\w\(\)_.]', '', s)
 
 
 def get_url_last_path(url):

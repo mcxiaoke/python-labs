@@ -45,7 +45,6 @@ def request(method, url, encoding=None, **kwargs):
     r = requests.request(method, url, timeout=default_timeout,
                          headers=get_headers(url), **kwargs)
     r.encoding = encoding or 'utf-8'
-    print(type(r.text))
     if r.status_code >= 400:
         raise IOError("HTTP %s [%s]" % (r.status_code, r.url))
     return r

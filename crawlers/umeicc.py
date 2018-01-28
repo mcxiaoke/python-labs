@@ -19,7 +19,7 @@ import shutil
 import traceback
 from urlparse import urlparse
 from urlparse import urljoin
-from lib import commons
+from lib import commons, utils
 
 DOMAIN = 'http://www.umei.cc/'
 # 标签页URL
@@ -134,7 +134,7 @@ def download_by_album(album_url, output=OUTPUT_DIR):
     stat_dir = os.path.join(output, 'stats')
     if not os.path.exists(stat_dir):
         os.makedirs(stat_dir)
-    album_key = commons.get_safe_filename(album_url)
+    album_key = utils.url_to_filename(album_url)
     # 下载完成文件
     album_done_file = os.path.join(
         stat_dir, 'album_{0}.done'.format(album_key))
@@ -163,7 +163,7 @@ def download_by_album(album_url, output=OUTPUT_DIR):
         pickle.dump((title, urls), f)
     print(u'downloading album {0} - {1}'.format(title, album_url))
     print(u'found {0} images in {1}'.format(len(urls), title))
-    album_name = commons.get_safe_filename(title)
+    album_name = utils.get_valid_filename(title)
     img_dir = os.path.join(output, album_name)
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)

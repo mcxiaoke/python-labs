@@ -102,7 +102,7 @@ def download_page(item, include_images=True):
                 # 给部分不是完整的图片URL添加域名部分
                 from_src = 'http://www.dapenti.com/blog/{0}'.format(from_src)
             # 过滤不合法的文件名字符
-            to_src = commons.get_safe_filename(compat.urlparse(from_src).path)
+            to_src = utils.url_to_filename(from_src)
             imgfile = os.path.join(imgdir, to_src)
             # 替换为本地图片链接
             img['src'] = os.path.join(img_dirname, to_src)

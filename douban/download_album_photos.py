@@ -83,3 +83,15 @@ if __name__ == '__main__':
         download_by_doulist(args['doulist'])
     elif args.get('userid'):
         download_by_user(args['userid'])
+
+### smart download by url 
+# ref: https://www.douban.com/note/206320326/
+# user photos url
+# doulist albums url
+# album photos url
+# suject photos url
+# online photos url
+# celebrity photos url
+# douban note url
+# general web page url
+### generating simple gallery page

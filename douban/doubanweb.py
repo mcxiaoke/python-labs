@@ -23,13 +23,14 @@ import logging
 import subprocess
 from lxml import etree, html
 from requests.exceptions import HTTPError
-
+from doubanapi import COUNT
 logger = logging.getLogger('doubanweb')
 
 sys.path.insert(1, os.path.dirname(
     os.path.dirname(os.path.realpath(__file__))))
 from lib.compat import raw_input
 from lib.utils import write_file
+
 
 USER_AGENT_OSX = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:57.0) Gecko/20100101 Firefox/57.0'
 
@@ -38,10 +39,10 @@ LOGIN_URL = 'https://www.douban.com/accounts/login'
 USER_ALBUMS_PAGE_URL = 'https://www.douban.com/people/%s/photos?start=%s'
 DOULIST_PAGE_URL = 'http://www.douban.com/doulist/%s/?sort=time&sub_type=12&start=%s'
 
-COUNT = 100
 COUNT_IN_DOULIST_PAGE = 25
 RE_ALBUM_URL_ID = re.compile(r'/photos/album/(\d+)/?')
 RE_DOULIST_URL_ID = re.compile(r'/doulist/(\d+)/?')
+RE_USER_URL_ID = re.compile(r'/people/(\d+)/?')
 
 _headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -159,6 +160,10 @@ def get_id_from_doulist_url(url):
     m = re.search(RE_DOULIST_URL_ID, url)
     return m.group(1) if m else None
 
+def get_id_from_user_url(url):
+    # https://www.douban.com/people/doiv/
+    m = re.search(RE_USER_URL_ID, url)
+    return m.group(1) if m else None
 
 def get_albums_in_doulist(doulist_id, max_page=9999):
     logger.debug('get_albums_in_doulist doulist_id=%s max_page=%s'

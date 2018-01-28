@@ -11,6 +11,8 @@ import os
 import codecs
 import logging
 
+COUNT = 100
+
 TOKEN_FILENAME = '.douban.token.dat'
 AUTH_TOKEN_URL = 'https://www.douban.com/service/auth2/token'
 API_DOMAIN = 'https://api.douban.com/v2'

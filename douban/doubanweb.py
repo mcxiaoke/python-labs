@@ -102,7 +102,12 @@ def login():
         'form_email': username,
         'form_password': password
     }
-    captcha_image, captcha_id = parse_captcha(text)
+    t = parse_captcha(text)
+    if t:
+        captcha_image, captcha_id = t
+    else:
+        captcha_image = None
+        captcha_id = None
     captcha_value = None
     if captcha_image and captcha_id:
         print('login need captcha %s' % captcha_image)

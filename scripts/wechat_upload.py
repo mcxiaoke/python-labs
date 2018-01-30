@@ -21,15 +21,24 @@ import redis
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-from config import WECHAT_TOKEN
+from config import WECHAT_APPID, WECHAT_APPSECRET
 
-MEDIA_ID_EXPIRE = 60*60*24*3 - 60*60 # in seconds
+MEDIA_ID_EXPIRE = 60 * 60 * 24 * 3 - 60 * 60  # in seconds
 MEDIA_ID_KEY = 'wechat:media_ids:v1'
 MEDIA_ID_USER_KEY = 'wechat:media_ids:v1:%s'
 MEDIA_ID_FILE = 'media_ids.txt'
 UPLOAD_IMAGE_URL = 'https://api.weixin.qq.com/cgi-bin/media/upload?access_token=%s&type=image'
+GET_TOKEN_URL = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s'
 
 r = redis.StrictRedis()
+r.delete(MEDIA_ID_KEY)
+
+def get_access_token():
+    url = GET_TOKEN_URL % (WECHAT_APPID, WECHAT_APPSECRET)
+    r = requests.get(url)
+    if r.status_code < 300:
+        return r.json()
+
 
 def random_media_id_user(user_id):
     user_key = MEDIA_ID_USER_KEY % user_id
@@ -40,41 +49,61 @@ def random_media_id_user(user_id):
         r.expire(user_key, MEDIA_ID_EXPIRE)
         return mid
 
+
 def random_media_id():
     return r.srandmember(MEDIA_ID_KEY)
 
-def save_media_ids(*media_ids):
+def save_media_ids(media_ids):
     r.sadd(MEDIA_ID_KEY, media_ids)
     r.expire(MEDIA_ID_KEY, MEDIA_ID_EXPIRE)
     with open(MEDIA_ID_FILE, 'wb') as f:
-        f.write(','.join(media_ids))
+        f.write('\n'.join(media_ids))
 
-def upload_image(ifile):
-    url = UPLOAD_IMAGE_URL % WECHAT_TOKEN
-    files = {'media': open(ifile, 'rb')}
+
+def upload_image(filepath, token):
+    url = UPLOAD_IMAGE_URL % token
+    files = {'media': open(filepath, 'rb')}
     try:
         r = requests.post(url, files=files)
         return r.json()['media_id']
     except Exception as e:
-        return None
+        traceback.print_exc()
 
-def upload_images(idir, max_count=100):
+
+def upload_images(root, token, max_count=300):
     mids = []
     names = os.listdir(root)[:max_count]
-    for name in os.listdir(idir):
-        ipath = os.path.join(idir, name)
-        mid = upload_image(ifile)
-        if mid:
-            mids.extend(mid)
+    count = 0
+    for name in os.listdir(root):
+        filepath = os.path.join(root, name)
+        print('Uploading image: %s' % filepath)
+        media_id = upload_image(filepath, token)
+        if media_id:
+            print('Uploaded image: %s' % media_id)
+            mids.append(media_id)
+            save_media_ids(mids)
+        count += 1
+        if count > max_count:
+            break
     mids = filter(None, mids)
     save_media_ids(mids)
     return mids
 
+
 def main():
-    upload_images(sys.argv[1])
+    try:
+        from config import WECHAT_TOKEN as token_json
+        token_json = json.loads(token_json)
+    except Exception as e:
+        token_json = get_access_token()
+    print(token_json)
+    if token_json:
+        token = token_json['access_token']
+        upload_images(sys.argv[1], token)
+
 
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
-    from lib import compat, commons, utils, upath
     main()
+

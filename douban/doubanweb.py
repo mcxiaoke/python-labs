@@ -5,7 +5,6 @@
 from __future__ import print_function, unicode_literals, absolute_import
 import codecs
 import requests
-import cookielib
 import base64
 import json
 import sys
@@ -63,13 +62,13 @@ cookie_file = os.path.join(os.path.expanduser('~'), '.douban.cookie.dat')
 
 def load_cookies():
     if os.path.exists(cookie_file):
-        with open(cookie_file) as f:
+        with open(cookie_file, 'rb') as f:
             _session.cookies = requests.utils.cookiejar_from_dict(
                 pickle.load(f))
 
 
 def save_cookies():
-    with open(cookie_file, 'w') as f:
+    with open(cookie_file, 'wb') as f:
         pickle.dump(requests.utils.dict_from_cookiejar(_session.cookies), f)
 
 

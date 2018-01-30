@@ -35,8 +35,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('doubanutils')
 
 OUTPUT_ROOT = 'output'
-if not os.path.exists(OUTPUT_ROOT):
-    os.makedirs(OUTPUT_ROOT)
+DOUBAN_ROOT = os.path.join(OUTPUT_ROOT, 'douban')
+if not os.path.exists(DOUBAN_ROOT):
+    os.makedirs(DOUBAN_ROOT)
 
 executor = ThreadPoolExecutorStackTraced(max_workers=8)
 
@@ -44,25 +45,25 @@ token_file = os.path.join(get_user_home(), '.douban_token.dat')
 api = ApiClient(token_file=token_file)
 
 
-def _get_downloads_output():
-    return os.path.join(OUTPUT_ROOT, 'downloads')
+def _get_downloads_output(root=DOUBAN_ROOT):
+    return os.path.join(root, 'downloads')
 
 
-def _get_album_photos_output(album):
+def _get_album_photos_output(album, root=DOUBAN_ROOT):
     album_name = get_valid_filename(album['title'])
-    return os.path.join(_get_downloads_output(), '%s_%s' % (album_name, album['id']))
+    return os.path.join(_get_downloads_output(root), '%s_%s' % (album_name, album['id']))
 
 
-def _get_albums_output():
-    return os.path.join(OUTPUT_ROOT, 'albums')
+def _get_albums_output(root=DOUBAN_ROOT):
+    return os.path.join(root, 'albums')
 
 
-def _get_doulist_output():
-    return os.path.join(OUTPUT_ROOT, 'doulist')
+def _get_doulist_output(root=DOUBAN_ROOT):
+    return os.path.join(root, 'doulist')
 
 
-def _get_user_output():
-    return os.path.join(OUTPUT_ROOT, 'user')
+def _get_user_output(root=DOUBAN_ROOT):
+    return os.path.join(root, 'user')
 
 
 def _compat_album_id(param):
@@ -157,11 +158,11 @@ def _fetch_album_photos(album_id):
         return data
 
 
-def get_album_photos(album_id):
+def get_album_photos(album_id, root=DOUBAN_ROOT):
     # https://api.douban.com/v2/album/1622166069/photos
     album_id = _compat_album_id(album_id)
     logger.info('get_album_photos %s' % album_id)
-    output = _get_albums_output()
+    output = _get_albums_output(root)
     if not os.path.exists(output):
         os.makedirs(output)
     data_file = os.path.join(output, 'album_%s.dat' % album_id)
@@ -176,12 +177,12 @@ def get_album_photos(album_id):
     return data
 
 
-def download_album_photos(album_id, output=None, async_mode=True):
+def download_album_photos(album_id, root=DOUBAN_ROOT, async_mode=True):
     logger.info('download_album_photos %s' % album_id)
-    data = get_album_photos(album_id)
+    data = get_album_photos(album_id, root)
     album = data['album']
     photos = data['photos']
-    output = os.path.abspath(output or _get_album_photos_output(album))
+    output =  _get_album_photos_output(album, root)
     if not os.path.exists(output):
         os.makedirs(output)
     urls = [p.get('large') or p.get('image') for p in photos]
@@ -212,10 +213,10 @@ def _fetch_albums_for_user(user_id):
     return [{k: a[k] for k in keep_keys} for a in albums]
 
 
-def get_albums_for_user(user_id):
+def get_albums_for_user(user_id, root=DOUBAN_ROOT):
     user_id = _compat_user_id(user_id)
     logger.info('get_albums_for_user %s' % user_id)
-    output = _get_user_output()
+    output = _get_user_output(root)
     if not os.path.exists(output):
         os.makedirs(output)
     data_file = os.path.join(output, 'user_%s.json' % user_id)
@@ -230,17 +231,17 @@ def get_albums_for_user(user_id):
     return albums
 
 
-def download_user_photos(user_id, output=None, async_mode=True):
-    albums = get_albums_for_user(user_id)
+def download_user_photos(user_id, root=DOUBAN_ROOT, async_mode=True):
+    albums = get_albums_for_user(user_id, root)
     album_ids = [album['id'] for album in albums]
     for album_id in album_ids:
-        download_album_photos(album_id, output=output, async_mode=async_mode)
+        download_album_photos(album_id, root=root, async_mode=async_mode)
 
 
-def get_albums_in_doulist(doulist_id):
+def get_albums_in_doulist(doulist_id, root=DOUBAN_ROOT):
     doulist_id = _compat_doulist_id(doulist_id)
     logger.info('get_albums_in_doulist %s' % doulist_id)
-    output = _get_doulist_output()
+    output =  _get_doulist_output(root)
     if not os.path.exists(output):
         os.makedirs(output)
     data_file = os.path.join(output, 'doulist_%s.dat' % doulist_id)
@@ -255,11 +256,11 @@ def get_albums_in_doulist(doulist_id):
     return albums
 
 
-def download_doulist_photos(doulist_id, output=None, async_mode=True):
-    albums = get_albums_in_doulist(doulist_id)
+def download_doulist_photos(doulist_id, root=DOUBAN_ROOT, async_mode=True):
+    albums = get_albums_in_doulist(doulist_id, root)
     album_ids = [doubanweb.get_id_from_album_url(a[0]) for a in albums]
     for album_id in album_ids:
-        download_album_photos(album_id, output=output, async_mode=async_mode)
+        download_album_photos(album_id, root=root, async_mode=async_mode)
 
 
 def get_albums_in_all_doulist(doulist_ids):
@@ -268,8 +269,8 @@ def get_albums_in_all_doulist(doulist_ids):
 
 
 def combine_doulist_albums():
-    data_file = os.path.join(OUTPUT_ROOT, 'albums.json')
-    id_file = os.path.join(OUTPUT_ROOT, 'album_ids.json')
+    data_file = os.path.join(DOUBAN_ROOT, 'albums.json')
+    id_file = os.path.join(DOUBAN_ROOT, 'album_ids.json')
     all_albums = []
     all_ids = []
     output = _get_doulist_output()
@@ -290,8 +291,8 @@ def combine_doulist_albums():
     print('Combined file: %s (%s)' % (data_file, len(all_albums)))
 
 
-def download_all_album_photos():
-    id_file = os.path.join(OUTPUT_ROOT, 'album_ids.json')
+def download_all_album_photos(root=DOUBAN_ROOT):
+    id_file = os.path.join(root, 'album_ids.json')
     ids = read_file(id_file).split(',')
     print(len(ids))
     blacklist = ['100945526', '100075813']
@@ -300,12 +301,22 @@ def download_all_album_photos():
             executor.submit(download_album_photos, id, async_mode=False)
             # download_album_photos(id)
 
+def download_cat_photos():
+    root = os.path.join(OUTPUT_ROOT, 'cats')
+    doulist_ids = ['3982978', '4189996']
+    for did in doulist_ids:
+        albums = get_albums_in_doulist(did, root)
+        album_ids = [doubanweb.get_id_from_album_url(a[0]) for a in albums]
+        for album_id in album_ids:
+            executor.submit(download_album_photos, album_id, root=root, async_mode=False)
 
 if __name__ == '__main__':
     print('doubanutils')
     # from albums_data import NEW_IDS as ids
     # get_albums_in_all_doulist(ids)
-    combine_doulist_albums()
-    download_all_album_photos()
+    # combine_doulist_albums()
+    # download_all_album_photos()
     # get_all_album_photos()
     # download_user_photos('1233832')
+    # download_doulist_photos('1867090')
+    download_cat_photos()

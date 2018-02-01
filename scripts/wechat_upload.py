@@ -28,6 +28,7 @@ TWO_HOUR_EXPIRE = 60*60*2  # in seconds
 MEDIA_ID_EXPIRE = TWO_HOUR_EXPIRE * 35  # in seconds
 ACCESS_TOKEN_KEY = 'wechat:token:v1:%s'
 MEDIA_ID_KEY = 'wechat:media_ids:v1:%s'
+MEDIA_ID_OUTPUT = 'data'
 MEDIA_ID_USER_KEY = 'wechat:media_ids:user:v1:%s:%s'
 MEDIA_ID_FILE = 'media_ids_v1_%s.txt'
 UPLOAD_IMAGE_URL = 'https://api.weixin.qq.com/cgi-bin/media/upload?access_token=%s&type=image'
@@ -60,14 +61,14 @@ class MediaStore(object):
         self.app_secret = app_secret
         self.expire = expire
         self.r = r
-        logger.info('__init__ name=%s app_id=%s, app_secret=%s' %
+        logger.debug('__init__ name=%s app_id=%s, app_secret=%s' %
                     (name, app_id, app_secret))
 
     def _get_media_key(self, type_name=''):
         return MEDIA_ID_KEY % type_name
 
     def _get_media_file(self, type_name=''):
-        return MEDIA_ID_FILE % type_name
+        return os.path.join(MEDIA_ID_OUTPUT, MEDIA_ID_FILE % type_name)
 
     def _get_user_key(self, user_id, type_name=''):
         return MEDIA_ID_USER_KEY % (type_name, user_id)
@@ -187,13 +188,13 @@ def check_all(root=SOURCE_ROOT):
     for type_name in (TYPE_CAT, TYPE_DOG, TYPE_OTHER):
         source_dir = os.path.abspath(os.path.join(root, type_name))
         if not os.path.exists(source_dir):
-            print('check_all source dir [%s] not exists' % source_dir)
+            print('ERROR: check_all source dir [%s] not exists' % source_dir)
             exit(1)
         if not os.path.isdir(source_dir):
-            print('check_all source dir [%s] not directory' % source_dir)
+            print('ERROR: check_all source dir [%s] not directory' % source_dir)
             exit(2)
         if not os.listdir(source_dir):
-            print('check_all source dir [%s] is empty' % source_dir)
+            print('ERROR: check_all source dir [%s] is empty' % source_dir)
             exit(2)
     print('all directories exists, check passed.')
 
@@ -203,18 +204,18 @@ def test_all():
         for type_name in (TYPE_CAT, TYPE_DOG, TYPE_OTHER):
             print('\n[Store:%s] found %s values for type %s, read test:'
                   % (store.name, store.media_ids_length(type_name), type_name))
-            for i in range(0, 5):
+            for i in range(0, 10):
                 print(store1.random_user_media_id('test', type_name))
             for i in range(0,10):
-                assert store1.random_user_media_id('test', type_name)
-                assert store1.random_media_id(type_name)
+                assert store1.random_user_media_id('test', type_name), 'No media id found'
+                assert store1.random_media_id(type_name), 'No media id found'
     print('all tests passed.')
 
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
-        prog='wechat_uploader', description='wechat images uploader')
+        prog='wechat_uploader', description='WeChat Images Uploader v0.1.0')
     parser.add_argument('-c', '--check', action="store_true",
                         help='check source dir')
     parser.add_argument('-t', '--test', action="store_true",
@@ -223,7 +224,7 @@ if __name__ == '__main__':
                         help='upload all images')
     parser.add_argument('-s', '--source', help='images source directory')
     args = parser.parse_args()
-    print(args)
+    # print(args)
     source_dir = args.source or SOURCE_ROOT
     if args.check:
         check_all(source_dir)

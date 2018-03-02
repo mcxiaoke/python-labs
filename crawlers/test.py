@@ -57,8 +57,17 @@ def parse_one():
         print(img)
     utils.write_file('b.html',soup.prettify())
 
+def insta_followings():
+    text = utils.read_file(sys.argv[1])
+    root = etree.HTML(text)
+    items = root.xpath('//div[@class="_f5wpw"]/a/@href')
+    ids = [i.strip('/') for i in items]
+    entries = ['    %s: output/%s' % (i, i) for i in ids]
+    utils.write_list('followings.txt', entries)
+
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
-    from lib import compat, commons, upath, utils
-    parse_one()
+    from lib import compat, commons, unipath, utils
+    # parse_one()
+    insta_followings()

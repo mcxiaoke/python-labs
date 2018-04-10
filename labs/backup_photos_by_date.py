@@ -69,9 +69,6 @@ def fix_print(s):
 def copy_by_date(source, destination, since, max_depth=5):
     if not source or not destination or not since:
         return -1
-    if PY2:
-        source = source.decode(os_encoding)
-        destination = destination.decode(os_encoding)
     source = os.path.abspath(source)
     destination = os.path.abspath(destination)
     since = datetime.strptime(since, DATE_FORMAT)
@@ -87,30 +84,27 @@ def copy_by_date(source, destination, since, max_depth=5):
             continue
         for name in files:
             src = os.path.join(root, name)
-            log(u'Processing {}'.format(src))
+            #log(u'Processing {}'.format(src))
             if name[0] in '._~':
-                log(u'Invalid: {}'.format(src))
+                #log(u'Invalid: {}'.format(src))
                 continue
             if os.path.getsize(src) < IMG_FILE_MIN_SIZE:
-                log(u'Invalid: {}'.format(src))
+                #log(u'Invalid: {}'.format(src))
                 continue
             t = time.ctime(os.path.getmtime(src))
             t = datetime.strptime(t, "%a %b %d %H:%M:%S %Y")
-            if t < since:
+            if t > since:
                 dst = os.path.join(destination, name)
                 if not os.path.exists(dst):
                     log(u'Copying {} -> {}'.format(src, dst))
                     shutil.copy2(src, dst)
-                    copied_count += 1
+                    copied_count = copied_count + 1
                 else:
                     log(u'Exist: {}'.format(dst))
     log(u'Result: %s files copied!' % copied_count)
     return copied_count
 
 def backup(source, destination, dry_run=False):
-    if PY2:
-        source = source.decode(os_encoding)
-        destination = destination.decode(os_encoding)
     source = os.path.abspath(source)
     destination = os.path.abspath(destination)
     log(u'SRC:  {}'.format(source))

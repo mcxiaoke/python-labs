@@ -8,6 +8,8 @@ import os
 import sys
 import shutil
 import re
+import time
+from datetime import datetime
 
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3
@@ -22,8 +24,8 @@ except Exception:
 os_encoding = sys.getfilesystemencoding()
 os_win = sys.platform.startswith('win')
 
-print(sys.version_info)
-print(sys.platform, sys.stdin.encoding, sys.stdout.encoding, os_encoding)
+# print(sys.version_info)
+# print(sys.platform, sys.stdin.encoding, sys.stdout.encoding, os_encoding)
 
 # reload(sys)
 # if os_win:
@@ -52,11 +54,11 @@ IMG_NAME_PATTERN = r'(?:[a-zA-Z]{1,4})?_?(20\d{2})[-_/]?(\d{2})[-_/]?(\d{2}).*\.
 # 4(year)+2(month)+2(day)+4(ext) = 12
 IMG_NAME_MIN_LEN = 12
 IMG_FILE_MIN_SIZE = 10*1024
-
+DATE_FORMAT = '%Y%m%d'
+EXIF_DATE_TIME = '%Y:%m:%d %H:%M:%S'
 
 def bad_filename(s):
     return repr(s)[1:-1]
-
 
 def fix_print(s):
     try:
@@ -64,10 +66,59 @@ def fix_print(s):
     except UnicodeEncodeError:
         print(bad_filename(s))
 
+def copy_by_date(source, destination, since, max_depth=5):
+    if not source or not destination or not since:
+        return -1
+    if PY2:
+        source = source.decode(os_encoding)
+        destination = destination.decode(os_encoding)
+    source = os.path.abspath(source)
+    destination = os.path.abspath(destination)
+    since = datetime.strptime(since, DATE_FORMAT)
+    log(u'SRC:  {}'.format(source))
+    log(u'DST:  {}'.format(destination))
+    log(u'DATE:  {}'.format(since))
+    if not os.path.exists(destination):
+        os.makedirs(destination)
+    copied_count = 0
+    for root, dirs, files in os.walk(source, topdown=True):
+        level = root.replace(source, '').count(os.sep)
+        if level >= max_depth:
+            continue
+        for name in files:
+            src = os.path.join(root, name)
+            log(u'Processing {}'.format(src))
+            if name[0] in '._~':
+                log(u'Invalid: {}'.format(src))
+                continue
+            if os.path.getsize(src) < IMG_FILE_MIN_SIZE:
+                log(u'Invalid: {}'.format(src))
+                continue
+            t = time.ctime(os.path.getmtime(src))
+            t = datetime.strptime(t, "%a %b %d %H:%M:%S %Y")
+            if t < since:
+                dst = os.path.join(destination, name)
+                if not os.path.exists(dst):
+                    log(u'Copying {} -> {}'.format(src, dst))
+                    shutil.copy2(src, dst)
+                    copied_count += 1
+                else:
+                    log(u'Exist: {}'.format(dst))
+    log(u'Result: %s files copied!' % copied_count)
+    return copied_count
 
 def backup(source, destination, dry_run=False):
+    if PY2:
+        source = source.decode(os_encoding)
+        destination = destination.decode(os_encoding)
+    source = os.path.abspath(source)
+    destination = os.path.abspath(destination)
+    log(u'SRC:  {}'.format(source))
+    log(u'DST:  {}'.format(destination))
+    if dry_run:
+        log(u"Mode: dry run mode, no files will be copied.")
     ip = re.compile(IMG_NAME_PATTERN, re.I)
-    log(u'Process: {}'.format(source))
+    log(u'Processing: {}'.format(source))
     if not os.path.isdir(source):
         log(u'Not Directory: {}'.format(source))
         return
@@ -109,25 +160,5 @@ def backup(source, destination, dry_run=False):
             log(u'Invalid: {}'.format(current))
 
 if __name__ == '__main__':
-    print(sys.argv)
-    if len(sys.argv) < 3:
-        print(u'Usage: {} source_dir destination_dir -n'.format(sys.argv[0]))
-        sys.exit(1)
-    src = os.path.abspath(sys.argv[1])
-    dst = os.path.abspath(sys.argv[2])
-    print(os.path.isdir(sys.argv[1]), os.path.isdir(sys.argv[2]))
-    if PY2:
-        src = src.decode(os_encoding)
-        dst = dst.decode(os_encoding)
-    log(u'SRC:  {}'.format(src))
-    log(u'DST:  {}'.format(dst))
-    dry_run = False
-    if len(sys.argv) == 4 and sys.argv[3] == '-n':
-        dry_run = True
-        log(u"Mode: dry run mode, no files will be copied.")
-    # else:
-    #     msg = "Are you sure to process files [y/n]? "
-    #     if input(msg).lower() not in ('y', 'yes'):
-    #         log('Cancelled.')
-    #         sys.exit(2)
-    backup(src, dst, dry_run)
+    copy_by_date(sys.argv[1],sys.argv[2], sys.argv[3])
+    # fire.Fire(backup)

@@ -117,7 +117,9 @@ class MediaStore(object):
         if not source_dir or not os.path.isdir(source_dir):
             return
         logger.info('upload_images [%s] for type [%s]' % (source_dir, type_name))
-        names = os.listdir(source_dir)[:max_count]
+        names = os.listdir(source_dir)
+        if len(names) > max_count:
+            names = random.sample(names, max_count)
         count = 0
         mids = []
         for name in names:

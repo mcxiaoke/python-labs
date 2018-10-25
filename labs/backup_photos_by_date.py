@@ -124,7 +124,7 @@ def backup(source, destination, dry_run=False):
         if os.path.isfile(current):
             # log(u'Process file: {}'.format(current))
             if len(name) < IMG_NAME_MIN_LEN:
-                log(u'Invalid:', current)
+                log(u'Invalid: {}'.format(current))
                 continue
             pic_size = os.path.getsize(current)
             if pic_size < IMG_FILE_MIN_SIZE:

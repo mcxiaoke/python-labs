@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-07-10 08:24:23
-
-from __future__ import print_function
 import os
 import sys
 import codecs
@@ -66,7 +64,6 @@ def exif_rename(top_dir, dry_run=True):
                 continue
             rel_path = path.join(root, name)
             src_path = path.abspath(rel_path)
-            src_path_u = src_path.decode('utf-8')
             # print("Processing: %s" % src_path)
             f = open(path.join(root, name), 'rb')
             tags = exifread.process_file(f)
@@ -82,7 +79,7 @@ def exif_rename(top_dir, dry_run=True):
             exif_date_time_obj = exif_d1 or exif_d2 or exif_d3
             if not exif_date_time_obj:
                 print("Exif date not found, skip %s" % name)
-                log.write('I:'+src_path_u+'\n')
+                log.write('I:'+src_path+'\n')
                 continue
             # print("Exif date: %s" % exif_date_time_obj)
             try:

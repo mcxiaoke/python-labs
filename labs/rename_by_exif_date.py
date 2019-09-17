@@ -70,7 +70,7 @@ def exif_rename(top_dir, dry_run=True):
             f.close()
             if not tags:
                 print('No exif tags found: %s\n' % name)
-                log.write('N:'+src_path_u+'\n')
+                log.write('N:'+src_path+'\n')
                 continue
 
             exif_d1 = tags.get('EXIF DateTimeDigitized')
@@ -88,11 +88,11 @@ def exif_rename(top_dir, dry_run=True):
                     exif_date_time_str, EXIF_DATE_TIME)
             except:
                 print("Invalid exif date:  %s" % name)
-                log.write('D:'+src_path_u+'\n')
+                log.write('D:'+src_path+'\n')
                 continue
             if not exif_date_time:
                 print("Exif date not found, skip %s" % name)
-                log.write('T:'+src_path_u+'\n')
+                log.write('T:'+src_path+'\n')
                 continue
             name_str = datetime.strftime(exif_date_time, NAME_DATE_TIME)
             if name_str == base:
@@ -106,8 +106,9 @@ def exif_rename(top_dir, dry_run=True):
             if path.exists(dst_path):
                 count += 1
                 if not dry_run:
-                    os.remove(src_path)
-                    print('[%s] Delete duplicate %s' % (count, src_path))
+                    if os.path.getsize(dst_path) == os.path.getsize(src_path):
+                        os.remove(src_path)
+                        print('[%s] Delete duplicate %s' % (count, src_path))
                 else:
                     print('[DRY RUN %s] Delete duplicate %s' % (count, src_path))
                 continue

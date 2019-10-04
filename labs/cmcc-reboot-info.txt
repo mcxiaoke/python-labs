@@ -1,0 +1,198 @@
+CMCCAdmin
+aDm8H%MdA
+
+
+GET http://192.168.1.1/ HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+DNT:    1
+Upgrade-Insecure-Requests:  1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=122feae60760b026f4385a56a95ff5df6d9f4b23e7a0eee8fb523240dec99603:Language:chinese:id=1
+
+
+
+
+var cnt;
+
+$.ajax({
+type : "POST",
+async : false,
+cache : false,
+url : '/asp/GetRandCount.asp',
+success : function(data) {
+cnt = data;
+}
+});
+
+    var Form = new webSubmitForm();
+var cookie2 = "Cookie=body:" + "Language:" + Language + ":" + "id=-1;path=/";
+Form.addParameter('UserName', Username.value);
+Form.addParameter('PassWord', base64encode(Password.value));
+    document.cookie = cookie2;
+
+    Username.disabled = true;
+    Password.disabled = true;
+
+    Form.addParameter('x.X_HW_Token', cnt);
+Form.setAction('/login.cgi');
+Form.submit();
+    return true;
+}
+
+
+
+
+POST http://192.168.1.1/asp/GetRandCount.asp HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Content-Length: 0
+Accept: */*
+Origin: http://192.168.1.1
+X-Requested-With:   XMLHttpRequest
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+DNT:    1
+Referer:    http://192.168.1.1/
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=586055ef3b5280058d726ff3d4c5a776adff7156e0a37a93964d46d0ba95cccd:Language:chinese:id=1
+
+HTTP/1.1 200 OK
+Cache-control:  no-cache, no-store, max-age=0
+Content-Type:   text/html
+Pragma: no-cache
+Transfer-Encoding:  chunked
+X-Frame-Options:    SAMEORIGIN
+Connection: Keep-Alive
+\xef\xbb\xbfea728fab01cda0799821b75dc8c4e819
+
+
+
+
+
+
+POST http://192.168.1.1/login.cgi HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Content-Length: 86
+Cache-Control:  max-age=0
+Origin: http://192.168.1.1
+Upgrade-Insecure-Requests:  1
+DNT:    1
+Content-Type:   application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer:    http://192.168.1.1/
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=body:Language:chinese:id=-1
+Body:
+UserName=CMCCAdmin&PassWord=YURtOEglTWRB&x.X_HW_Token=ea728fab01cda0799821b75dc8c4e819
+
+HTTP/1.1 200 OK
+Set-cookie: Cookie=sid=ef952392da21a300a5f883f8c5d2bf6d23dfc8e85ee0c6ed7201131554a3e91e:Language:chinese:id=1;path=/
+Content-Type:   text/html
+Pragma: no-cache
+Cache-control:  no-cache, no-store, max-age=0
+Transfer-Encoding:  chunked
+X-Frame-Options:    SAMEORIGIN
+Connection: Keep-Alive
+
+
+
+
+
+
+
+GET http://192.168.1.1/index.asp HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Upgrade-Insecure-Requests:  1
+DNT:    1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer:    http://192.168.1.1/login.cgi
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=2d72eec3c7d79e58c648e665143d8d6d167716d53baf57f39e6619f756049d30:Language:chinese:id=1
+
+
+
+
+GET http://192.168.1.1/html/ssmp/devmanage/cmccdevicereset.asp HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Upgrade-Insecure-Requests:  1
+DNT:    1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer:    http://192.168.1.1/index.asp
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=2d72eec3c7d79e58c648e665143d8d6d167716d53baf57f39e6619f756049d30:Language:chinese:id=1
+
+
+
+
+GET http://192.168.1.1/html/ssmp/common/StartFileLoad.asp HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+DNT:    1
+Accept: */*
+Referer:    http://192.168.1.1/html/ssmp/devmanage/cmccdevicereset.asp
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=2d72eec3c7d79e58c648e665143d8d6d167716d53baf57f39e6619f756049d30:Language:chinese:id=1
+
+
+
+
+
+
+POST http://192.168.1.1/html/ssmp/devmanage/set.cgi?x=InternetGatewayDevice.X_HW_DEBUG.SMP.DM.ResetBoard&RequestFile=html/ssmp/devmanage/cmccdevicereset.asp HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Content-Length: 45
+Cache-Control:  max-age=0
+Origin: http://192.168.1.1
+Upgrade-Insecure-Requests:  1
+DNT:    1
+Content-Type:   application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer:    http://192.168.1.1/html/ssmp/devmanage/cmccdevicereset.asp
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=2d72eec3c7d79e58c648e665143d8d6d167716d53baf57f39e6619f756049d30:Language:chinese:id=1
+x.X_HW_Token=9d5cce8d0faf175430932f42b62c1ccb
+
+
+GET http://192.168.1.1/html/ssmp/common/refreshTime.asp?_=1569834851851 HTTP/1.1
+Host:   192.168.1.1
+Proxy-Connection:   keep-alive
+Accept: */*
+DNT:    1
+X-Requested-With:   XMLHttpRequest
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36
+Referer:    http://192.168.1.1/refresh.asp
+Accept-Encoding:    gzip, deflate
+Accept-Language:    zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,de;q=0.5,fr;q=0.4,pl;q=0.3,pt;q=0.2,es;q=0.1,da;q=0.1,nb;q=0.1,lb;q=0.1
+Cookie: Cookie=sid=2d72eec3c7d79e58c648e665143d8d6d167716d53baf57f39e6619f756049d30:Language:chinese:id=1
+
+
+
+
+
+    var Form = new webSubmitForm();
+    Form.setAction('set.cgi?x=' + 'InternetGatewayDevice.X_HW_DEBUG.SMP.DM.ResetBoard'
+     + '&RequestFile=html/ssmp/devmanage/cmccdevicereset.asp');
+    Form.addParameter('x.X_HW_Token', getValue('onttoken'));
+    Form.submit();
+<div align="right">
+    <input type="hidden" name="onttoken" id="hwonttoken" value="9d5cce8d0faf175430932f42b62c1ccb">
+    <input type='button' name="Restart_button" id="Restart_button" class="submit" style="width:98px" onClick='Reboot()' value="重启">
+  </div>

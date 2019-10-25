@@ -8,6 +8,8 @@ import codecs
 import exifread
 from os import path
 from datetime import datetime
+# from PIL import Image
+# https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 
 TAGS = [
     'GPS GPSLatitude',

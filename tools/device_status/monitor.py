@@ -4,9 +4,9 @@ import time
 import logging
 import requests
 import socket
-import fcntl
 import struct
 import re
+import platform
 import paho.mqtt.client as mqtt
 from config import *
 
@@ -41,7 +41,7 @@ def on_message(client, userdata, msg):
 
 
 def on_connect(client, userdata, flags, rc):
-    logging.info("Connected with result: "+mqtt.error_string(rc))
+    logging.info("MQTT Connected with result: "+mqtt.error_string(rc))
     # client.subscribe("$SYS/#")
     client.subscribe(THE_TOPIC)
     client.publish(STATUC_TOPIC, "Online", retain=True)
@@ -54,7 +54,7 @@ def on_disconnect(client, userdata, rc):
 
 def publish_status():
     ip = get_ip()
-    uname = ' '.join(os.uname())
+    uname = ' '.join(platform.uname())
     client.publish(
         STATUC_TOPIC, "{} is running, ip is {} ({})".format(HOSTNAME, ip, uname))
 
@@ -74,6 +74,5 @@ def create_client():
 
 if __name__ == "__main__":
     client = create_client()
-    logging.info("====================")
-    logging.info("OrangePi online")
+    logging.info("{} device status monitor online".format(HOSTNAME))
     client.loop_forever()

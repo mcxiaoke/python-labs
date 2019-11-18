@@ -7,10 +7,12 @@ import socket
 import struct
 import re
 import platform
+from datetime import datetime
+import time
 import paho.mqtt.client as mqtt
 from config import *
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 HOSTNAME = socket.gethostname()
 THE_TOPIC = HOSTNAME+"/#"
@@ -31,6 +33,19 @@ def get_ip():
     return IP
 
 
+def send_online():
+    dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ip = get_ip()
+    un = ' '.join(platform.uname())
+    data = {'text': '{}_Online_{}'.format(HOSTNAME, ip),
+            'desp': 'IP:{}  \nHost:{}  \nDate:{}'.format(ip, un, dt)}
+    try:
+        r = requests.post(WX_URL, data=data, timeout=10)
+        logging.info(r.text[:64])
+    except Exception as e:
+        logging.error(e)
+
+
 def on_message(client, userdata, msg):
     topic = msg.topic
     message = msg.payload.decode('utf8')
@@ -46,6 +61,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(THE_TOPIC)
     client.publish(STATUC_TOPIC, "Online", retain=True)
     publish_status()
+    send_online()
 
 
 def on_disconnect(client, userdata, rc):

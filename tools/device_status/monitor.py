@@ -9,6 +9,7 @@ import re
 import platform
 from datetime import datetime
 import time
+from datetime import datetime
 import paho.mqtt.client as mqtt
 from config import *
 
@@ -18,6 +19,12 @@ HOSTNAME = socket.gethostname()
 THE_TOPIC = HOSTNAME+"/#"
 STATUC_TOPIC = HOSTNAME+"/status"
 CMD_TOPIC = HOSTNAME+"/cmd"
+DCHECK_TOPIC = "device/check"
+DONLINE_TOPIC = "device/online"
+
+first_connect = True
+uname = ' '.join(platform.uname())
+boot = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 def get_ip():
@@ -36,9 +43,8 @@ def get_ip():
 def send_online():
     dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ip = get_ip()
-    un = ' '.join(platform.uname())
     data = {'text': '{}_Online_{}'.format(HOSTNAME, ip),
-            'desp': 'IP:{}  \nHost:{}  \nDate:{}'.format(ip, un, dt)}
+            'desp': 'Host: {}  \nIP: {}  \nBoot:{}  \nDate: {}'.format(uname, ip, boot, dt)}
     try:
         r = requests.post(WX_URL, data=data, timeout=10)
         logging.info(r.text[:64])
@@ -46,33 +52,40 @@ def send_online():
         logging.error(e)
 
 
+def publish_status(to_topic):
+    ip = get_ip()
+    client.publish(
+        to_topic, "Host: {} IP: {} Boot: {} Info: {}".format(HOSTNAME, ip, boot, uname))
+
+
 def on_message(client, userdata, msg):
     topic = msg.topic
     message = msg.payload.decode('utf8')
     logging.info(topic+" - "+message.replace("\n", " ") +
                  " ("+str(msg.qos)+","+str(msg.retain)+")")
-    if topic == CMD_TOPIC and message == 'status':
-        publish_status()
+    cmd_list = ('check', 'status', '?')
+    if topic == DCHECK_TOPIC:
+        publish_status(DONLINE_TOPIC)
+    elif topic == CMD_TOPIC and message in cmd_list:
+        publish_status(STATUC_TOPIC)
 
 
 def on_connect(client, userdata, flags, rc):
     logging.info("MQTT Connected with result: "+mqtt.error_string(rc))
     # client.subscribe("$SYS/#")
-    client.subscribe(THE_TOPIC)
+    client.subscribe(CMD_TOPIC)
+    client.subscribe(DCHECK_TOPIC)
     client.publish(STATUC_TOPIC, "Online", retain=True)
-    publish_status()
-    send_online()
+    publish_status(STATUC_TOPIC)
+    publish_status(DONLINE_TOPIC)
+    global first_connect
+    if first_connect:
+        send_online()
+        first_connect = False
 
 
 def on_disconnect(client, userdata, rc):
     logging.info("Disconnected with result: "+mqtt.error_string(rc))
-
-
-def publish_status():
-    ip = get_ip()
-    uname = ' '.join(platform.uname())
-    client.publish(
-        STATUC_TOPIC, "{} is running, ip is {} ({})".format(HOSTNAME, ip, uname))
 
 
 def create_client():

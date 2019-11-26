@@ -27,6 +27,15 @@ uname = ' '.join(platform.uname())
 boot = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
+def led_set(on_or_off):
+    try:
+        import gpio_led
+        gpio_led.led_set(on_or_off)
+    except:
+        print('No LED found')
+        pass
+
+
 def get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -40,7 +49,7 @@ def get_ip():
     return IP
 
 
-def send_online():
+def send_online_report():
     dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ip = get_ip()
     data = {'text': '{}_Online_{}'.format(HOSTNAME, ip),
@@ -52,10 +61,14 @@ def send_online():
         logging.error(e)
 
 
+def publish_online():
+    client.publish(STATUC_TOPIC, "Online", retain=True)
+
+
 def publish_status(to_topic):
     ip = get_ip()
     client.publish(
-        to_topic, "Host: {} IP: {} Boot: {} Info: {}".format(HOSTNAME, ip, boot, uname))
+        to_topic, "{}/{} Boot: {} Info: {}".format(HOSTNAME, ip, boot, uname))
 
 
 def on_message(client, userdata, msg):
@@ -75,17 +88,19 @@ def on_connect(client, userdata, flags, rc):
     # client.subscribe("$SYS/#")
     client.subscribe(CMD_TOPIC)
     client.subscribe(DCHECK_TOPIC)
-    client.publish(STATUC_TOPIC, "Online", retain=True)
+    publish_online()
     publish_status(STATUC_TOPIC)
     publish_status(DONLINE_TOPIC)
     global first_connect
     if first_connect:
-        send_online()
+        send_online_report()
         first_connect = False
+    led_set(True)
 
 
 def on_disconnect(client, userdata, rc):
     logging.info("Disconnected with result: "+mqtt.error_string(rc))
+    led_set(False)
 
 
 def create_client():
@@ -97,7 +112,7 @@ def create_client():
     client.on_message = on_message
     client.username_pw_set(MQTT_USER, MQTT_PASS)
     client.will_set(STATUC_TOPIC, payload="Offline", retain=True)
-    client.connect(MQTT_SERVER, port=MQTT_PORT, keepalive=60)
+    client.connect(MQTT_SERVER, port=MQTT_PORT, keepalive=15)
     return client
 
 

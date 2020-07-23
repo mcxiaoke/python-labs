@@ -87,14 +87,14 @@ class Application(Frame):
 
         self.hi_there.pack({"side": "left"})
 
-    def __init__(self, master=None):
-        Frame.__init__(self, master)
+    def __init__(self, main=None):
+        Frame.__init__(self, main)
         self.pack()
         self.createWidgets()
 
 class App(Frame):
-    def __init__(self, master=None):
-        Frame.__init__(self, master)
+    def __init__(self, main=None):
+        Frame.__init__(self, main)
         self.pack()
 
         self.entrythingy = Entry()
@@ -118,10 +118,10 @@ class App(Frame):
               self.contents.get()
 
 root = Tk()
-app = App(master=root)
-app.master.title("Tkinter Demo")
-app.master.minsize(320,240)
-app.master.maxsize(800,600)
+app = App(main=root)
+app.main.title("Tkinter Demo")
+app.main.minsize(320,240)
+app.main.maxsize(800,600)
 print root.config()
 app.mainloop()
 root.destroy()

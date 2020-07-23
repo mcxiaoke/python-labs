@@ -19,8 +19,8 @@ class GuiDemo(GuiMixin, GuiMakerWindowMenu):
 
     def start(self):
         self.hellos = 0
-        self.master.title("Gui Demo")
-        self.master.iconname('GuiDemo')
+        self.main.title("Gui Demo")
+        self.main.iconname('GuiDemo')
 
         def spawnme():
             self.spawn('demo_mix.py')

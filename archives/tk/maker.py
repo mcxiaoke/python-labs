@@ -95,8 +95,8 @@ GuiMakeFrameMenu = GuiMaker
 class GuiMakerWindowMenu(GuiMaker):
 
     def makeMenuBar(self):
-        menubar = Menu(self.master)
-        self.master.config(menu=menubar)
+        menubar = Menu(self.main)
+        self.main.config(menu=menubar)
 
         for (name, key, items) in self.menuBar:
             pulldown = Menu(menubar)

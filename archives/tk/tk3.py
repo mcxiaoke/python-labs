@@ -171,8 +171,8 @@ class NewMenuDemo(Frame):
         Frame.__init__(self, parent)
         self.pack(expand=YES, fill=BOTH)
         self.createWidgets()
-        self.master.title('Toolbars and Menus')
-        self.master.iconname('menudemo')
+        self.main.title('Toolbars and Menus')
+        self.main.iconname('menudemo')
 
     def createWidgets(self):
         self.makeMenuBar()
@@ -204,8 +204,8 @@ class NewMenuDemo(Frame):
         Button(toolbar, text='Quit', command=self.quit).pack(side=RIGHT)
 
     def makeMenuBar(self):
-        self.menubar = Menu(self.master)
-        self.master.config(menu=self.menubar)
+        self.menubar = Menu(self.main)
+        self.main.config(menu=self.menubar)
         self.fileMenu()
         self.editMenu()
         self.imageMenu()
@@ -690,14 +690,14 @@ class HideDemo(NumCounter):
     def repeater(self):
         self.bell()
         # 窗口是否在显示？
-        if self.master.state() == 'normal':
+        if self.main.state() == 'normal':
             # 隐藏整个窗口，包括图标
-            self.master.withdraw()
+            self.main.withdraw()
         else:
             # 重绘整个窗口
-            self.master.deiconify()
+            self.main.deiconify()
             # 显示控件
-            self.master.lift()
+            self.main.lift()
         self.after(self.msecs,self.repeater)
 
 def win_hide_demo():

@@ -17,8 +17,8 @@ class ShellGui(GuiMixin, GuiMakerWindowMenu):
     def start(self):
         self.setMenuBar()
         self.setToolBar()
-        self.master.title('Shell Tool Listbox')
-        self.master.iconname('Shell Tools')
+        self.main.title('Shell Tool Listbox')
+        self.main.iconname('Shell Tools')
 
     def handleList(self, event):
         label = self.listbox.get(ACTIVE)

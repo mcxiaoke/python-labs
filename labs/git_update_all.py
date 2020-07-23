@@ -25,7 +25,7 @@ def git_pull_all(root):
         os.chdir(td)
         if os.path.exists(os.path.join('.', '.git')):
             try:
-                subprocess.check_call('git remote -v && git pull origin master',shell=True)
+                subprocess.check_call('git remote -v && git pull origin main',shell=True)
             except Exception, e:
                 print('unable to update repo {0}, error: {1}'.format(td, e))
         else:

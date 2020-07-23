@@ -10,8 +10,8 @@ from imp import reload
 # 模块动态加载示例
 
 class Hello(Frame):
-    def __init__(self,master=None):
-        Frame.__init__(self,master)
+    def __init__(self,main=None):
+        Frame.__init__(self,main)
         self.pack()
         self.makeWidgets()
 

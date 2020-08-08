@@ -11,7 +11,7 @@ import re
 from PIL import Image
 from multiprocessing.dummy import Pool
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
-from threading import current_thread
+from threading import currentThread
 
 MAX_WIDTH = 1600  # 1200 1600
 EXTENSIONS = ('.jpg', '.png', '.gif', '.tiff')
@@ -74,7 +74,7 @@ def get_thumb_filename(src):
     return '{}_thumb{}'.format(fbase, ext)
 
 
-def make_thumb_one(src, dst):
+def make_thumb_one(src, dst, index=0):
     max_width = MAX_WIDTH
     file_name = os.path.basename(src)
     fbase, ext = os.path.splitext(file_name)
@@ -102,7 +102,8 @@ def make_thumb_one(src, dst):
                 nw = int((float(width) * nh / float(height)))
             nim = im.resize((nw, nh))
             nim.save(dst, quality=85)
-            print("DST: {} {} ({})".format(dst, nim.size, os.getpid()))
+            print("[{}] DST: {} {} ({},{})".format(index,
+                                                   dst, nim.size, os.getpid(), currentThread().name))
             return dst
     except IOError as e:
         print(e)
@@ -125,10 +126,11 @@ def move_thumbs(src_dir):
 
 
 def make_thumb_one_args(args):
-    make_thumb_one(args[0], args[1])
+    make_thumb_one(args[0], args[1], args[2])
 
 
 def make_thumbs(src_dir):
+    index = 0
     images = []
     for root, dirs, files in os.walk(src_dir):
         for adir in dirs:
@@ -141,15 +143,23 @@ def make_thumbs(src_dir):
             if not ext or ext.lower() not in EXTENSIONS:
                 continue
             src_path = path.abspath(path.join(root, name))
-            dst_path = path.join(root, 'thumbs')
+            root_new = root.replace('/XWIN/Photos/', '/XWIN/Photos/Thumbs/')
+            dst_path = path.join(root_new, 'thumbs')
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
+            if os.path.exists(dst_file):
+                print("Skip: {}".format(dst_file))
+                continue
             if not os.path.exists(dst_path):
                 os.makedirs(dst_path)
-            if os.path.exists(dst_file):
-                print("Skip: {}".format(dst))
-                continue
-             images.append((src_path, dst_path))
+            index = index + 1
+            images.append((src_path, dst_path, index))
+            print("Prepare: {}".format(src_path))
     total = len(images)
+    print('{} images will be processed.'.format(total))
+    sel = input("Press Enter yes or y to continue...")
+    if not sel.startswith("y"):
+        print("Aborted.")
+        return
     start = time.time()
     # with ThreadPoolExecutor(max_workers=4) as executor:
     #     futures = {executor.submit(make_thumb_one, src, dst): (

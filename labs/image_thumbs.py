@@ -13,7 +13,7 @@ from multiprocessing.dummy import Pool
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from threading import currentThread
 
-MAX_WIDTH = 1600  # 1200 1600
+MAX_WIDTH = 2400  # (6000x4000 -> 2400x1600)
 EXTENSIONS = ('.jpg', '.png', '.gif', '.tiff')
 
 
@@ -92,7 +92,7 @@ def make_thumb_one(src, dst, index=0):
     try:
         im = Image.open(src)
         width, height = im.size
-        if width > max_width:
+        if width > max_width or height > max_width:
             # print("SRC: {} {}".format(src, im.size))
             if width > height:
                 nw = max_width
@@ -134,7 +134,16 @@ def make_thumbs(src_dir):
     images = []
     for root, dirs, files in os.walk(src_dir):
         for adir in dirs:
-            if 'thumb' in adir.lower():
+            dn = adir.lower()
+            if 'thumb' in dn:
+                continue
+            if '小图' in dn:
+                continue
+            if '精选' in dn:
+                continue
+            if 'feature' in dn:
+                continue
+            if 'web' in dn:
                 continue
         for name in files:
             if 'thumb' in name.lower():
@@ -143,8 +152,10 @@ def make_thumbs(src_dir):
             if not ext or ext.lower() not in EXTENSIONS:
                 continue
             src_path = path.abspath(path.join(root, name))
-            root_new = root.replace('/XWIN/Photos/', '/XWIN/Photos/Thumbs/')
-            dst_path = path.join(root_new, 'thumbs')
+            # root_new = root.replace('/XWIN/Photos/', '/XWIN/Photos/Thumbs/')
+            root_new = root.replace('/相机照片/', '/相机小图/')
+            # dst_path = path.join(root_new, 'thumbs')
+            dst_path = root_new
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
             if os.path.exists(dst_file):
                 print("Skip: {}".format(dst_file))
@@ -156,7 +167,7 @@ def make_thumbs(src_dir):
             print("Prepare: {}".format(src_path))
     total = len(images)
     print('{} images will be processed.'.format(total))
-    sel = input("Press Enter yes or y to continue...")
+    sel = input("Press Enter yes/y to continue: ")
     if not sel.startswith("y"):
         print("Aborted.")
         return

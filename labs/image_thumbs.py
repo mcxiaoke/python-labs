@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
 # @Date:   2015-12-11 17:03:40
@@ -83,6 +83,7 @@ def make_thumb_one(src, dst, index=0):
         print("Not image: {}".format(dst))
         return
     dst = os.path.join(dst, get_thumb_filename(src))
+    dst = os.path.abspath(dst)
     if not os.path.exists(src):
         print("Not exists: {}".format(src))
         return
@@ -133,18 +134,18 @@ def make_thumbs(src_dir):
     index = 0
     images = []
     for root, dirs, files in os.walk(src_dir):
-        for adir in dirs:
-            dn = adir.lower()
-            if 'thumb' in dn:
-                continue
-            if '小图' in dn:
-                continue
-            if '精选' in dn:
-                continue
-            if 'feature' in dn:
-                continue
-            if 'web' in dn:
-                continue
+        dn = root.lower()
+        if 'thumb' in dn:
+            continue
+        if '小图' in dn:
+            continue
+        if '精选' in dn:
+            continue
+        if 'feature' in dn:
+            continue
+        if 'web' in dn:
+            continue
+        print('Searching... in', os.path.abspath(root))
         for name in files:
             if 'thumb' in name.lower():
                 continue
@@ -152,19 +153,16 @@ def make_thumbs(src_dir):
             if not ext or ext.lower() not in EXTENSIONS:
                 continue
             src_path = path.abspath(path.join(root, name))
-            # root_new = root.replace('/XWIN/Photos/', '/XWIN/Photos/Thumbs/')
-            root_new = root.replace('/相机照片/', '/相机小图/')
-            # dst_path = path.join(root_new, 'thumbs')
-            dst_path = root_new
+            dst_path = os.path.abspath(root).replace('/相机照片/', '/相机小图/')
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
             if os.path.exists(dst_file):
-                print("Skip: {}".format(dst_file))
+                # print("Skip: {}".format(dst_file))
                 continue
             if not os.path.exists(dst_path):
                 os.makedirs(dst_path)
             index = index + 1
             images.append((src_path, dst_path, index))
-            print("Prepare: {}".format(src_path))
+            print("Prepare: {}".format(dst_file))
     total = len(images)
     print('{} images will be processed.'.format(total))
     sel = input("Press Enter yes/y to continue: ")

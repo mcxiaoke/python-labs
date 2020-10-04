@@ -39,7 +39,7 @@ def resize_one(src, dst, max_width):
             nw = max_width
             nh = int((float(height) * nw / float(width)))
             nim = im.resize((nw, nh))
-            nim.save(dst, format='JPEG', quality=90)
+            nim.save(dst, format='JPEG', quality=90, exif=im.info['exif'])
             print("DST: {} {}".format(dst, nim.size))
             return dst
     except IOError as e:

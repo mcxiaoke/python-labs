@@ -65,11 +65,6 @@ IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png')
 def valid_image(root, name, real):
     src_path = path.normpath(path.join(root, name))
     base, ext = path.splitext(name)
-    if name.startswith(".") or name.startswith("_"):
-        logger.warning("Remove invalid file: {}".format(src_path))
-        if real:
-            os.remove(src_path)
-        return False
     if path.getsize(src_path) < 10*1024:
         logger.info("Remove small file: {}".format(src_path))
         if real:

@@ -77,10 +77,11 @@ def make_thumb_one_args(args):
 
 
 def make_thumbs(src_dir):
-    if '相机照片' not in src_dir:
+    src_dir = os.path.abspath(src_dir)
+    print('Root:{}'.format(src_dir))
+    if '相机照片' not in src_dir and 'JPEG' not in src_dir:
         print('Invalid Path:{}'.format(src_dir))
         return
-    print('Root:{}'.format(src_dir))
     index = 0
     images = []
     for root, dirs, files in os.walk(src_dir):
@@ -103,7 +104,10 @@ def make_thumbs(src_dir):
             if not ext or ext.lower() not in EXTENSIONS:
                 continue
             src_path = path.abspath(path.join(root, name))
-            dst_path = os.path.abspath(root).replace('/相机照片/', '/相机小图/')
+            if '相机照片' in root:
+                dst_path = os.path.abspath(root).replace('/相机照片/', '/相机小图/')
+            else:
+                dst_path = os.path.abspath(root).replace('/JPEG', '/相机小图')
             dst_path = dst_path.replace(
                 '/Volumes/XWIN/Photos/', '/Users/mcxiaoke/Pictures/Photos/')
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
@@ -116,6 +120,7 @@ def make_thumbs(src_dir):
             images.append((src_path, dst_path, index))
             print("Prepare: {}".format(dst_file))
     total = len(images)
+    print('Root:{}'.format(src_dir))
     print('{} images will be processed.'.format(total))
     sel = input("Press Enter yes/y to continue: ")
     if not sel.startswith("y"):

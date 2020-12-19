@@ -5,6 +5,7 @@
 import os
 import time
 from os import path
+import pathlib
 import sys
 import shutil
 import re
@@ -79,11 +80,12 @@ def make_thumb_one_args(args):
 def make_thumbs(src_dir):
     src_dir = os.path.abspath(src_dir)
     print('Root:{}'.format(src_dir))
-    if '相机照片' not in src_dir and 'JPEG' not in src_dir:
-        print('Invalid Path:{}'.format(src_dir))
-        return
+    # if '相机照片' not in src_dir and 'JPEG' not in src_dir:
+    #     print('Invalid Path:{}'.format(src_dir))
+    #     return
     index = 0
     images = []
+    dst_dir = ''
     for root, dirs, files in os.walk(src_dir):
         dn = root.lower()
         if 'thumb' in dn:
@@ -106,8 +108,13 @@ def make_thumbs(src_dir):
             src_path = path.abspath(path.join(root, name))
             if '相机照片' in root:
                 dst_path = os.path.abspath(root).replace('/相机照片/', '/相机小图/')
+            elif 'JPEG' in root:
+                dst_path = os.path.abspath(root).replace('/JPEG/', '/相机小图/')
+            elif 'Temp' in root:
+                dst_path = os.path.abspath(root).replace('/Temp/', '/相机小图/')
             else:
-                dst_path = os.path.abspath(root).replace('/JPEG', '/相机小图')
+                dst_root = os.path.expanduser('~/Pictures/相机小图')
+                dst_path = os.path.join(dst_root, root)
             dst_path = dst_path.replace(
                 '/Volumes/XWIN/Photos/', '/Users/mcxiaoke/Pictures/Photos/')
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
@@ -118,9 +125,12 @@ def make_thumbs(src_dir):
                 os.makedirs(dst_path)
             index = index + 1
             images.append((src_path, dst_path, index))
-            print("Prepare: {}".format(dst_file))
+            print("New Thumb: {}".format(dst_file))
     total = len(images)
-    print('Root:{}'.format(src_dir))
+    if total > 0:
+        dst_dir = images[0][1]
+    print('Images: {}'.format(src_dir))
+    print('Thumbs: {}'.format(dst_dir))
     print('{} images will be processed.'.format(total))
     sel = input("Press Enter yes/y to continue: ")
     if not sel.startswith("y"):

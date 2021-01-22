@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Author: mcxiaoke
-# @Date:   2020-10-04 22:29:40
+# @Date:   2015-12-11 17:03:40
 import os
 import time
 from os import path
-import pathlib
 import sys
 import shutil
 import re
@@ -14,8 +13,49 @@ from multiprocessing.dummy import Pool
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from threading import currentThread
 
-MAX_WIDTH = 3000  # (6000x4000 -> 3000x2000)
+# Generating thumbs for images in a folder
+# 给某个目录的图片生成精选小图
+
+MAX_WIDTH = 3600  # (6000x4000 -> 3600x2400)
 EXTENSIONS = ('.jpg', '.png', '.gif', '.tiff')
+
+
+def resize_one(src, dst, max_width):
+    _, ext = os.path.splitext(os.path.basename(src))
+    if not ext or ext.lower() not in EXTENSIONS:
+        print("Not image: {}".format(dst))
+        return
+    _, ext = os.path.splitext(os.path.basename(dst))
+    if not ext or ext.lower() != '.jpg':
+        dst = "{}.jpg".format(dst)
+    if not os.path.exists(src):
+        print("Not exists: {}".format(src))
+        return
+    if os.path.exists(dst):
+        print("Exists: {}".format(dst))
+        return
+    try:
+        im = Image.open(src)
+        width, height = im.size
+        if width > max_width:
+            print("SRC: {} {}".format(src, im.size))
+            nw = max_width
+            nh = int((float(height) * nw / float(width)))
+            nim = im.resize((nw, nh))
+            nim.save(dst, format='JPEG', quality=90, exif=im.info['exif'])
+            print("DST: {} {}".format(dst, nim.size))
+            return dst
+    except IOError as e:
+        print(e)
+
+
+def resize_batch(src, dst, max_width):
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    for name in sorted(os.listdir(src)):
+        old_file = os.path.join(src, name)
+        new_file = os.path.join(dst, name)
+        resize_one(old_file, new_file, max_width)
 
 
 def clear_thumbs(src_dir):
@@ -42,7 +82,7 @@ def make_thumb_one(src, dst, index=0):
     file_name = os.path.basename(src)
     fbase, ext = os.path.splitext(file_name)
     # print("{},{},{}".format(src, dst, file_name))
-    if not ext or ext.lower() not in ['.jpg', '.png', '.gif']:
+    if not ext or ext.lower() not in EXTENSIONS:
         print("Not image: {}".format(dst))
         return
     dst = os.path.join(dst, get_thumb_filename(src))
@@ -65,7 +105,7 @@ def make_thumb_one(src, dst, index=0):
                 nh = max_width
                 nw = int((float(width) * nh / float(height)))
             nim = im.resize((nw, nh))
-            nim.save(dst, format='JPEG', quality=85, exif=im.info['exif'])
+            nim.save(dst, quality=85, exif=im.info['exif'])
             print("[{}] DST: {} {} ({},{})".format(index,
                                                    dst, nim.size, os.getpid(), currentThread().name))
             return dst
@@ -77,79 +117,34 @@ def make_thumb_one_args(args):
     make_thumb_one(args[0], args[1], args[2])
 
 
-def make_thumbs(src_dir):
-    src_dir = os.path.abspath(src_dir)
-    print('Root:{}'.format(src_dir))
-    # if '相机照片' not in src_dir and 'JPEG' not in src_dir:
-    #     print('Invalid Path:{}'.format(src_dir))
-    #     return
+def make_thumbs(root):
     index = 0
     images = []
-    dst_dir = ''
-    for root, dirs, files in os.walk(src_dir):
-        dn = root.lower()
-        if 'thumb' in dn:
+    files = [f for f in os.listdir(
+        root) if os.path.isfile(os.path.join(root, f))]
+    for name in files:
+        _, ext = path.splitext(name)
+        if not ext or ext.lower() not in EXTENSIONS:
             continue
-        if '小图' in dn:
+        src_file = path.abspath(path.join(root, name))
+        dst_path = path.join(root, '精选小图')
+        dst_file = path.join(dst_path, get_thumb_filename(src_file))
+        if os.path.exists(dst_file):
+            print("Skip: {}".format(dst_file))
             continue
-        if '精选' in dn:
-            continue
-        if 'feature' in dn:
-            continue
-        if 'web' in dn:
-            continue
-        print('Searching... in', os.path.abspath(root))
-        for name in files:
-            if 'thumb' in name.lower():
-                continue
-            _, ext = path.splitext(name)
-            if not ext or ext.lower() not in EXTENSIONS:
-                continue
-            src_path = path.abspath(path.join(root, name))
-            if '相机照片' in root:
-                dst_path = os.path.abspath(root).replace('/相机照片/', '/相机小图/')
-            elif 'JPEG' in root:
-                dst_path = os.path.abspath(root).replace('/JPEG/', '/相机小图/')
-            elif 'Temp' in root:
-                dst_path = os.path.abspath(root).replace('/Temp/', '/相机小图/')
-            else:
-                dst_root = os.path.expanduser('~/Pictures/相机小图')
-                dst_path = os.path.join(dst_root, root)
-            dst_path = dst_path.replace(
-                '/Volumes/XWIN/Photos/', '/Users/mcxiaoke/Pictures/Photos/')
-            dst_file = path.join(dst_path, get_thumb_filename(src_path))
-            if os.path.exists(dst_file):
-                # print("Skip: {}".format(dst_file))
-                continue
-            if not os.path.exists(dst_path):
-                os.makedirs(dst_path)
-            index = index + 1
-            images.append((src_path, dst_path, index))
-            print("New Thumb: {}".format(dst_file))
+        if not os.path.exists(dst_path):
+            os.makedirs(dst_path)
+        index = index + 1
+        images.append((src_file, dst_path, index))
+        print("Prepare: {}".format(src_file))
     total = len(images)
-    if total > 0:
-        dst_dir = images[0][1]
-    print('Images: {}'.format(src_dir))
-    print('Thumbs: {}'.format(dst_dir))
     print('{} images will be processed.'.format(total))
     sel = input("Press Enter yes/y to continue: ")
     if not sel.startswith("y"):
         print("Aborted.")
         return
     start = time.time()
-    # with ThreadPoolExecutor(max_workers=4) as executor:
-    #     futures = {executor.submit(make_thumb_one, src, dst): (
-    #         src, dst) for (src, dst) in images}
-    #     for future in as_completed(futures):
-    #         try:
-    #             result = future.result()
-    #         except Exception as e:
-    #             print(e)
     with Pool(4) as p:
-        # for (src, dst) in images:
-            # print("Process:", src_path)
-            # make_thumb_one(src, dst)
-            # p.apply_async(make_thumb_one, (src, dst))
         p.map(make_thumb_one_args, images)
         p.close()
         p.join()

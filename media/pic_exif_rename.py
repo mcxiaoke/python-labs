@@ -3,6 +3,11 @@
 # @Author: mcxiaoke
 # @Date:   2019-12-13
 
+# Rename images by exif date time
+# 根据图片EXIF的日期时间信息重命名图片
+# eg. DSC_20210119_111546.ARW
+# eg. IMG_20210121_174456.JPG
+
 # depends on exifread, click
 import os
 import sys
@@ -15,7 +20,7 @@ import click_log
 import logging
 from multiprocessing.dummy import Pool
 # from loguru import logger
-from lib_exif import IMG_FORMATS, RAW_FORMATS, EXIF_DATE_TIME, get_date_time, is_raw_image
+from lib_exif import IMG_FORMATS, RAW_FORMATS, get_date_time, is_raw_image
 # from PIL import Image
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 

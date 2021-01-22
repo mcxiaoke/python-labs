@@ -7,6 +7,9 @@ import sys
 import shutil
 import re
 
+# Move jpeg images in RAW folders
+# 移动RAW文件夹下LR导出的JPEG图片
+
 
 def move_all_jpeg(src_dir):
     src_dir = os.path.abspath(src_dir)

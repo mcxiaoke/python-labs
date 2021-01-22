@@ -4,10 +4,26 @@ import pprint
 from datetime import datetime
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
+import exiftool
+
+RAW_FORMATS = ('.arw', '.nef', 'nrw', '.cr2', '.cr3', '.dng')
+IMG_FORMATS = ('.jpg', '.jpeg', '.png', '.tiff')
 
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 
-_EXIF_DATE_TIME = '%Y:%m:%d %H:%M:%S'
+EXIF_DATE_TIME = '%Y:%m:%d %H:%M:%S'
+
+
+def is_raw_image(filename):
+    name = os.path.basename(filename)
+    base, ext = os.path.splitext(name)
+    return ext and ext.lower() in RAW_FORMATS
+
+
+def is_normal_image(filename):
+    name = os.path.basename(filename)
+    base, ext = os.path.splitext(name)
+    return ext and ext.lower() in IMG_FORMATS
 
 
 def get_decimal_from_dms(dms, ref):
@@ -34,16 +50,16 @@ def get_coordinates(geotags):
     return (lat, lon)
 
 
-def get_exif(filename):
+def get_img_exif(filename):
     image = Image.open(filename)
     image.verify()
     return image.getexif()
 
 
-def get_labeled_exif(fe):
+def get_img_labeled_exif(fe):
     '''param: filename or exif object'''
     if isinstance(fe, str):
-        exif = get_exif(fe)
+        exif = get_img_exif(fe)
     else:
         exif = fe
     labeled = {}
@@ -54,21 +70,42 @@ def get_labeled_exif(fe):
 
 
 def get_date_time(filename):
+    name = os.path.basename(filename)
+    base, ext = os.path.splitext(name)
+    if ext and ext.lower() in IMG_FORMATS:
+        return get_img_date_time(filename)
+    elif ext and ext.lower() in RAW_FORMATS:
+        return get_raw_date_time(filename)
+
+
+def get_raw_date_time(filename):
     try:
-        tags = get_labeled_exif(filename)
+        with exiftool.ExifTool() as et:
+            tags = et.get_metadata(filename)
+            dt_tag = tags["EXIF:DateTimeOriginal"] or tags["EXIF:DateTimeDigitized"] or tags["EXIF:DateTime"]
+            # print('RAW: {} - {}'.format(dt_tag, filename))
+            return datetime.strptime(
+                dt_tag, EXIF_DATE_TIME)
+    except Exception as e:
+        print(e)
+
+
+def get_img_date_time(filename):
+    try:
+        tags = get_img_labeled_exif(filename)
         dt_tag = tags.get('DateTimeOriginal') or tags.get(
             'DateTimeDigitized') or tags.get('DateTime')
+        # print('IMG: {} - {}'.format(dt_tag, filename))
         return datetime.strptime(
-            dt_tag, _EXIF_DATE_TIME)
+            dt_tag, EXIF_DATE_TIME)
     except Exception as e:
-        pass
-        # print(e)
+        print(e)
 
 
 def get_geotagging(fe):
     '''param: filename or exif object'''
     if isinstance(fe, str):
-        exif = get_exif(fe)
+        exif = get_img_exif(fe)
     else:
         exif = fe
     if not exif:
@@ -89,8 +126,8 @@ def get_geotagging(fe):
 
 def test_exif():
     filename = sys.argv[1]
-    exif = get_exif(filename)
-    labeled = get_labeled_exif(exif)
+    exif = get_img_exif(filename)
+    labeled = get_img_labeled_exif(exif)
     pprint.pprint(labeled)
     print('------')
     geotags = get_geotagging(exif)

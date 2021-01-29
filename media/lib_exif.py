@@ -7,7 +7,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 import exiftool
 
 RAW_FORMATS = ('.arw', '.nef', 'nrw', '.cr2', '.cr3', '.dng')
-IMG_FORMATS = ('.jpg', '.jpeg', '.png', '.tiff')
+IMG_FORMATS = ('.jpg', '.jpeg', '.png', '.tiff','.heif','.heic')
 
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 
@@ -70,12 +70,15 @@ def get_img_labeled_exif(fe):
 
 
 def get_date_time(filename):
+    return get_raw_date_time(filename)
+    '''
     name = os.path.basename(filename)
     base, ext = os.path.splitext(name)
     if ext and ext.lower() in IMG_FORMATS:
         return get_img_date_time(filename)
     elif ext and ext.lower() in RAW_FORMATS:
         return get_raw_date_time(filename)
+    '''
 
 
 def get_raw_date_time(filename):

@@ -13,6 +13,20 @@ IMG_FORMATS = ('.jpg', '.jpeg', '.png', '.tiff','.heif','.heic')
 
 EXIF_DATE_TIME = '%Y:%m:%d %H:%M:%S'
 
+_et = None
+
+# batch mode for performance
+def exif_begin():
+    global _et
+    if not _et:
+        _et = exiftool.ExifTool()
+    if not _et.running:
+        _et.start()
+
+def exif_end():
+    global _et
+    if _et.running:
+        _et.terminate()
 
 def is_raw_image(filename):
     name = os.path.basename(filename)
@@ -80,8 +94,7 @@ def get_date_time(filename):
         return get_raw_date_time(filename)
     '''
 
-
-def get_raw_date_time(filename):
+def get_raw_date_time_old(filename):
     try:
         with exiftool.ExifTool() as et:
             tags = et.get_metadata(filename)
@@ -89,6 +102,16 @@ def get_raw_date_time(filename):
             # print('RAW: {} - {}'.format(dt_tag, filename))
             return datetime.strptime(
                 dt_tag, EXIF_DATE_TIME)
+    except Exception as e:
+        print(e)
+
+def get_raw_date_time(filename):
+    exif_begin()
+    try:
+        tags = _et.get_metadata(filename)
+        dt_tag = tags["EXIF:DateTimeOriginal"] or tags["EXIF:DateTimeDigitized"] or tags["EXIF:DateTime"]
+        # print('RAW: {} - {}'.format(dt_tag, filename))
+        return datetime.strptime(dt_tag, EXIF_DATE_TIME)
     except Exception as e:
         print(e)
 

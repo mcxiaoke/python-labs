@@ -20,7 +20,8 @@ import click_log
 import logging
 from multiprocessing.dummy import Pool
 # from loguru import logger
-from lib_exif import IMG_FORMATS, RAW_FORMATS, get_date_time, is_raw_image
+from lib_exif import IMG_FORMATS, RAW_FORMATS, get_date_time, is_raw_image, exif_begin, exif_end
+
 # from PIL import Image
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 
@@ -144,6 +145,7 @@ def exif_rename(source, yes=True):
     files = list_images(source)
     tasks = []
     dst_path_list = []
+    exif_begin()
     for src_path in files:
         logger.debug('Processing: {}'.format(src_path))
         dst_path = get_dst_path(src_path, dst_path_list)
@@ -153,14 +155,15 @@ def exif_rename(source, yes=True):
             tasks.append((src_path, dst_path, count))
             logger.info(
                 'Add Task({}):{}->{}'.format(count, _short_path(src_path), _short_path(dst_path)))
+    exif_end()
     total = len(tasks)
     if total < 1:
         logger.info('Rename nothing.')
         return
     do_it = yes
     elapsed = time.time()-start
-    logger.info('Processing {} files using seconds.'.format(
-        total, elapsed/1000))
+    logger.info('Processing {} files using {} seconds.'.format(
+        total, elapsed))
     if not do_it:
         logger.warning(
             '\nReady to rename {} files, Are you sure? yes/no'.format(total))

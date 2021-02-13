@@ -180,8 +180,8 @@ def exif_rename(source, yes=True):
         logger.info("Tasks finished, {} files renamed.".format(
             total))
     else:
-        for f, t in tasks:
-            logger.debug('Ignored: {}->{}'.format(f, t))
+        for f, t, i in tasks:
+            logger.debug('Ignored({}): {}->{}'.format(i, f, t))
         logger.warning('Aborted, nothing to do.')
 
 

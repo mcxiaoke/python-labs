@@ -86,32 +86,42 @@ def get_date_tag(filename):
         tags = _et.get_metadata(filename)
         if not tags:
             return
-            # sony camera video tag
-        dt_name = "XML:CreationDateValue"
-        dt_value = tags.get(dt_name)
-        if not dt_value:
-            # video tag
-            dt_name = "QuickTime:CreationDate"
+        # video file
+        if is_video(filename):
+            # sony ilce-6300 only video tag
+            dt_name = "XML:CreationDateValue"
             dt_value = tags.get(dt_name)
-        if not dt_value:
-            # iphone photo exif tag with millis
+            if not dt_value:
+                # iphone only video tag
+                dt_name = "QuickTime:CreationDate"
+                dt_value = tags.get(dt_name)
+            if not dt_value:
+                # mp4 and mov video common tag
+                dt_name = "QuickTime:CreateDate"
+                dt_value = tags.get(dt_name)
+        # image file
+        else:
+            # photo exif tag [with millis]
+            # iphone and xiaomi and nikon
             dt_name = 'Composite:SubSecDateTimeOriginal'
             dt_value = tags.get(dt_name)
-        if not dt_value:
-            dt_name = 'Composite:SubSecCreateDate'
-            dt_value = tags.get(dt_name)
-        if not dt_value:
-            dt_name = "EXIF:DateTimeOriginal"
-            dt_value = tags.get(dt_name)
-        if not dt_value:
-            dt_name = "EXIF:DateTimeDigitized"
-            dt_value = tags.get(dt_name)
-        if not dt_value:
-            dt_name = "EXIF:CreateDate"
-            dt_value = tags.get(dt_name)
-        if not dt_value:
-            dt_name = "QuickTime:CreateDate"
-            dt_value = tags.get(dt_name)
+            if not dt_value:
+                dt_name = 'Composite:SubSecCreateDate'
+                dt_value = tags.get(dt_name)
+            if not dt_value:
+                dt_name = "EXIF:DateTimeOriginal"
+                dt_value = tags.get(dt_name)
+            if not dt_value:
+                dt_name = "EXIF:DateTimeDigitized"
+                dt_value = tags.get(dt_name)
+            if not dt_value:
+                dt_name = "EXIF:CreateDate"
+                dt_value = tags.get(dt_name)
+        if '0000' in dt_value:
+            print('[{}] Invalid TAG:{}'.format(
+                os.path.basename(filename), dt_value))
+            dt_value = None
+        # last using file date
         if not dt_value:
             dt_name = "File:FileModifyDate"
             dt_value = dt_value = tags.get(dt_name)

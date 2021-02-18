@@ -20,7 +20,7 @@ import click_log
 import logging
 from multiprocessing.dummy import Pool
 # from loguru import logger
-from lib_exif import IMG_FORMATS, RAW_FORMATS, get_date_time, is_raw_image, exif_begin, exif_end
+from lib_exif import MEDIA_FORMATS, get_date_time, get_prefix, exif_begin, exif_end, is_video
 
 # from PIL import Image
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
@@ -61,14 +61,11 @@ def valid_image(root, name):
     src_path = path.normpath(path.join(root, name))
     base, ext = path.splitext(name)
     if path.getsize(src_path) < 10*1024:
-        logger.info("Remove small file: {}".format(_short_path(src_path)))
+        logger.warning("Found small file: {}".format(_short_path(src_path)))
         return False
-    if not ext:
-        logger.info("No extension: {}".format(_short_path(src_path)))
-        return False
-    if ext.lower() in IMG_FORMATS or ext.lower() in RAW_FORMATS:
+    if ext and ext.lower() in MEDIA_FORMATS:
         return True
-    logger.info("Not image: {}".format(_short_path(src_path)))
+    logger.warning("Not image or video: {}".format(_short_path(src_path)))
     return False
 
 
@@ -78,11 +75,15 @@ def get_dst_path(src_path, dst_path_list):
     base, ext = path.splitext(name)
     short_path = _short_path(src_path)
     exif_date_time = get_date_time(src_path)
+    # print('[{}] DateTime:{}'.format(short_path, exif_date_time))
     if not exif_date_time:
         logger.warning("No Exif: {}".format(short_path))
         return
-    name_format = RAW_NAME_DATE_TIME if is_raw_image(
-        src_path) else IMG_NAME_DATE_TIME
+    if is_video(src_path):
+        name_format = "{}%Y%m%d_%H%M%S".format(get_prefix(src_path))
+    else:
+        millis = int(exif_date_time.microsecond/1000)
+        name_format = "{}%Y%m%d_%H%M%S_{}".format(get_prefix(src_path), millis)
     name_str_prefix = datetime.strftime(exif_date_time, name_format)
     if name_str_prefix.lower() == base.lower():
         logger.debug('Skip1: %s' % short_path)
@@ -139,7 +140,7 @@ def exif_rename_one(args):
 def exif_rename(source, yes=True):
     '''Using exif date time to rename all images in source directory.'''
     top = path.abspath(path.normpath(source))
-    logger.info('Root:{} [yes:{}]'.format(top, yes))
+    logger.info('Root:{} [auto_yes:{}]'.format(top, yes))
     start = time.time()
     count = 0
     files = list_images(source)
@@ -154,7 +155,7 @@ def exif_rename(source, yes=True):
             dst_path_list.append(dst_path)
             tasks.append((src_path, dst_path, count))
             logger.info(
-                'Add Task({}):{}->{}'.format(count, _short_path(src_path), _short_path(dst_path)))
+                '[Task({})]: {}->{}'.format(count, _short_path(src_path), os.path.basename(dst_path)))
     exif_end()
     total = len(tasks)
     if total < 1:

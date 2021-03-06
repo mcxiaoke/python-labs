@@ -14,10 +14,15 @@ import shutil
 from datetime import datetime
 
 ISO_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-FORMATS = (u'.pdf', u'.epub', u'.mobi', u'.azw3', u'.djvu', u'.txt')
-INVALID_CHARS = u'~!@#$%^&*()+,._[]{}<>?`【】《》：”‘，。？'
+FORMATS = ('.pdf', '.epub', '.mobi', '.azw3', '.djv', '.txt')
+INVALID_CHARS = '~!@#$%^&*()+,._[]{}<>?`【】《》：”‘，。？'
 
 processed = []
+
+
+def log(x):
+    print(x)
+
 
 def _replace_invalid(s):
     for c in INVALID_CHARS:
@@ -69,8 +74,9 @@ def nomalize_name(old_name):
 
 def fix_fileanme(old_path, dry_run=False):
     curdir = os.path.dirname(old_path)
-    # log(u'file: {}'.format(old_path))
-    base, ext = os.path.splitext(old_path)
+    # log('file: {}'.format(old_path))
+    old_name = os.path.basename(old_path)
+    base, ext = os.path.splitext(old_name)
     if not ext:
         return old_path
     if ext.lower() not in FORMATS:
@@ -79,75 +85,72 @@ def fix_fileanme(old_path, dry_run=False):
     old_base, new_base = nomalize_name(base)
     if old_base == new_base:
         return old_path
-    new_name = u'{}{}'.format(new_base, ext.lower())
+    new_name = '{}{}'.format(new_base, ext.lower())
     new_path = os.path.join(curdir, new_name)
     # print(type(old_path), type(new_path))
     # print(repr(old_path)[1:-1])
     if not os.path.exists(old_path):
-        log(u'Error: {}'.format(old_path))
+        log('Error: {}'.format(old_path))
         return old_path
     if new_path != old_path:
         if not os.path.exists(new_path):
-            log(u'Rename: {} -> {}'.format(old_path, new_name))
+            log('Rename: {} -> {}'.format(old_name, new_name))
             processed.append((old_path, new_path))
             if not dry_run:
                 shutil.move(old_path, new_path)
                 return new_path
         else:
-            log(u'Exists: {}'.format(new_path))
+            log('Exists: {}'.format(new_path))
     else:
-        log(u'NoNeed: {}'.format(new_path))
+        log('NoNeed: {}'.format(new_path))
 
     return old_path
 
 
 def rename_ebooks(root, dry_run=False):
     for curdir, subdirs, filenames in os.walk(root, topdown=True):
-        log(u'-- {} --'.format(curdir))
+        log('-- {} --'.format(curdir))
         for name in filenames:
             filename = os.path.join(curdir, name)
             fix_fileanme(filename, dry_run)
     logfile = os.path.join(root, 'logs.txt')
-    log(u'processed count: {}'.format(len(processed)))
+    log('processed count: {}'.format(len(processed)))
     with codecs.open(logfile, 'w', 'utf-8') as f:
         timestamp = datetime.strftime(datetime.now(), ISO_DATE_FORMAT)
-        f.write(u'--- Time: {} ---\n'.format(timestamp))
-        f.write(u'--- Root: {} ---\n'.format(root))
+        f.write('--- Time: {} ---\n'.format(timestamp))
+        f.write('--- Root: {} ---\n'.format(root))
         if dry_run:
-            f.write(u'--- Mode: dry run mode, no files will be renamed. ---\n')
+            f.write('--- Mode: dry run mode, no files will be renamed. ---\n')
         for (o, n) in processed:
-            f.write(u'{} -> {}\n'.format(o, n))
+            f.write('{} -> {}\n'.format(o, n))
         f.flush()
 
 
 def contains_cjk(text):
-    cjk_pattern = re.compile(u'[\u4e00-\u9fa5]+')
+    cjk_pattern = re.compile('[\u4e00-\u9fa5]+')
     return cjk_pattern.search(text)
- 
+
+
 def remove_cjk(root, dry_run=False):
     for curdir, subdirs, filenames in os.walk(root, topdown=True):
-        log(u'-- {} --'.format(curdir))
+        log('-- {} --'.format(curdir))
         for name in filenames:
             if contains_cjk(name):
-                log(u'Delete {}'.format(name))
-                os.remove(os.path.join(curdir,name))
+                log('Delete {}'.format(name))
+                os.remove(os.path.join(curdir, name))
+
 
 if __name__ == '__main__':
     sys.path.insert(1, os.path.dirname(
         os.path.dirname(os.path.realpath(__file__))))
-    from lib.debug import log
-    from lib.compat import PY2
     print(sys.argv)
     if len(sys.argv) < 2:
-        log(u'Usage: {} target_dir -n'.format(sys.argv[0]))
+        log('Usage: {} target_dir -n'.format(sys.argv[0]))
         sys.exit(1)
     dry_run = False
     if len(sys.argv) == 3 and sys.argv[2] == '-n':
         dry_run = True
         log(u"Mode: dry run mode, no files will be renamed.")
     root = os.path.abspath(sys.argv[1])
-    if PY2:
-        os_encoding = sys.getfilesystemencoding()
-        root = root.decode(os_encoding)
-    log(u'Root: {}'.format(root))
+    log('Root: {}'.format(root))
     rename_ebooks(root, dry_run)

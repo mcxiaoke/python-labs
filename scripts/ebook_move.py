@@ -6,9 +6,9 @@ Author: mcxiaoke (github@mcxiaoke.com)
 License: Apache License 2.0
 '''
 import sys
-import os
 import re
 import shutil
+from pathlib import Path
 
 
 def contains_cjk(text):
@@ -17,25 +17,23 @@ def contains_cjk(text):
 
 
 def move_no_cjk(src):
-    root = src
-    no_cjk = os.path.join(os.path.dirname(root), 'no_cjk')
-    if not os.path.exists(no_cjk):
-        os.makedirs(no_cjk)
-
-    names = [n for n in os.listdir(
-        root) if os.path.isfile(os.path.join(root, n))]
+    root = Path(src)
+    no_cjk = Path(root).parent.joinpath('no_cjk')
+    if not no_cjk.exists():
+        no_cjk.mkdir(exist_ok=True)
 
     print('Root:', root)
     print('No_CJK:', no_cjk)
 
-    for n in names:
-        if not contains_cjk(n):
-            old_path = os.path.join(root, n)
-            new_path = os.path.join(no_cjk, n)
+    for old_path in root.iterdir():
+        if not old_path.is_file():
+            continue
+        if not contains_cjk(old_path.name):
+            new_path = no_cjk.joinpath(old_path.name)
             print("From:", old_path)
             print("To:", new_path)
             try:
-                shutil.move(old_path, new_path)
+                old_path.rename(new_path)
             except Exception as e:
                 print(e)
 

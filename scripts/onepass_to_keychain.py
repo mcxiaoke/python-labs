@@ -4,7 +4,7 @@ from __future__ import print_function
 import os
 import sys
 import csv
-from urlparse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse
 
 XML_TPL = '''
 <xml>
@@ -20,21 +20,24 @@ ENTRY_TPL = '''
 
 def main():
     entries = []
-    with open(sys.argv[1], 'rb') as f:
+    with open(sys.argv[1], 'r') as f:
         reader = csv.reader(f)
         for row in reader:
-            username = row[3]
-            password = row[2]
-            url = row[4]
+            # print(row)
+            username = row[4]
+            password = row[3]
+            url = row[5]
+            # print(url)
             up = urlparse(url)
-            host= '{}://{}'.format(up.scheme, up.netloc)
+            # print(up)
+            host = '{}://{}'.format(up.scheme, up.netloc)
             print(host)
             entry = ENTRY_TPL.format(host, username, password, host)
             entries.append(entry)
     if entries:
         entries_string = ''.join(entries)
         xml_string = XML_TPL.format(entries_string)
-        with open('test.xml', 'wb') as f:
+        with open('keychain-import.xml', 'w') as f:
             f.write(xml_string)
 
 

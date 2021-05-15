@@ -1,0 +1,14 @@
+ [Unit]
+ Description=Lan Monitor Service
+ Documentation=https://github.com/mcxiaoke
+ After=network.target
+
+ [Service]
+ User=nobody
+ NoNewPrivileges=true
+ ExecStart=python3 /opt/scripts/lan_monitor.py
+ Restart=on-failure
+ RestartPreventExitStatus=23
+
+ [Install]
+ WantedBy=multi-user.target

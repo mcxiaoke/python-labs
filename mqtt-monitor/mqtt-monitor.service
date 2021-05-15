@@ -1,0 +1,13 @@
+[Unit]
+Description=MQTT Monitor Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/python3 /home/ubuntu/scripts/mqtt-monitor/monitor.py
+
+[Install]
+WantedBy=multi-user.target

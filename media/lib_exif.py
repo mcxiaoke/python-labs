@@ -2,6 +2,7 @@
 import os
 import sys
 import pprint
+import traceback
 from datetime import datetime
 import exiftool
 
@@ -117,7 +118,7 @@ def get_date_tag(filename):
             if not dt_value:
                 dt_name = "EXIF:CreateDate"
                 dt_value = tags.get(dt_name)
-        if '0000' in dt_value:
+        if dt_value and '0000' in dt_value:
             print('[{}] Invalid TAG:{}'.format(
                 os.path.basename(filename), dt_value))
             dt_value = None
@@ -132,7 +133,7 @@ def get_date_tag(filename):
         # show_exif(filename, 'date')
         return dt_value
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
 
 
 def get_date_time(filename):

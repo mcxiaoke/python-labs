@@ -16,11 +16,11 @@ import pprint
 from config import WX_REPORT_URL
 
 DEVICES = [
-    ("Mini", "Xiaomi Mini OpenWrt", "192.168.1.2", 22),
-    ("OneCloud", "One Cloud OpenWrt", "192.168.1.3", 22),
+    ("Mini", "Xiaomi Mini OpenWrt", "192.168.1.2", 80),
+    ("OneCloud", "One Cloud OpenWrt", "192.168.1.3", 80),
     ("DF975D", "ESP Watering Device", "192.168.1.116", 80),
-    ("N1BOX", "N1 Armbian Server", "192.168.1.114", 22),
-    ("HP400G1", "HP400 x86 Server", "192.168.1.118", 22)]
+    ("N1BOX", "N1 Armbian Server", "192.168.1.114", 80),
+    ("HP400G1", "HP400 x86 Server", "192.168.1.118", 80)]
 
 status = {}
 
@@ -81,7 +81,7 @@ def check_device(dv):
 
 
 def check_all():
-    threading.Timer(60, check_all).start()
+    threading.Timer(180, check_all).start()
     print("Checking at", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     for dv in DEVICES:
         check_device(dv)

@@ -85,6 +85,10 @@ def get_date_tag(filename):
     exif_begin()
     try:
         tags = _et.get_metadata(filename)
+    except Exception as e:
+        # print('Error: No Exif {}'.format(os.path.basename(filename)))
+        return
+    try:
         if not tags:
             return
         # video file
@@ -133,7 +137,8 @@ def get_date_tag(filename):
         # show_exif(filename, 'date')
         return dt_value
     except Exception as e:
-        print(traceback.format_exc())
+        # print('Error: Unknwon Error {}'.format(os.path.basename(filename)))
+        return
 
 
 def get_date_time(filename):

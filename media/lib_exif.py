@@ -3,6 +3,7 @@ import os
 import sys
 import pprint
 import traceback
+import locale
 from datetime import datetime
 import exiftool
 
@@ -34,6 +35,12 @@ def exif_end():
     if _et.running:
         _et.terminate()
 
+def fix_filename(filename):
+    filename = os.path.abspath(filename)
+    if sys.platform == 'win32':
+        enc = locale.getpreferredencoding()
+        filename = filename.encode(enc)
+    return filename
 
 def get_prefix(filename):
     name = os.path.basename(filename)
@@ -84,7 +91,7 @@ def get_decimal_from_dms(dms, ref):
 def get_date_tag(filename):
     exif_begin()
     try:
-        tags = _et.get_metadata(filename)
+        tags = _et.get_metadata(fix_filename(filename))
     except Exception as e:
         # print('Error: No Exif {}'.format(os.path.basename(filename)))
         return
@@ -157,8 +164,8 @@ def show_exif(source, tag_filter=None):
         return
     try:
         for filename in filenames:
-            print('====== {} ======'.format(os.path.basename(filename)))
-            tags = _et.get_metadata(filename)
+            print('====== {} ======'.format(filename))
+            tags = _et.get_metadata(fix_filename(filename))
             if tag_filter:
                 for k in tags.keys():
                     if tag_filter.lower() in k.lower():
@@ -166,7 +173,7 @@ def show_exif(source, tag_filter=None):
             else:
                 pprint.pprint(tags)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
     exif_end()
 
 

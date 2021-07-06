@@ -26,7 +26,7 @@ from lib_exif import MEDIA_FORMATS, get_date_time, get_prefix, exif_begin, exif_
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 
 # logging.basicConfig(level=logging.INFO)
-
+DUP_SUFFIX = ('A','B','C','D','E','F','G')
 
 def get_full_class_name(obj):
     module = obj.__class__.__module__
@@ -79,7 +79,7 @@ def get_dst_path(src_path, dst_path_list):
     if not exif_date_time:
         logger.warning("No Exif: {}".format(short_path))
         return
-    if is_video(src_path):
+    if is_video(src_path) or exif_date_time.microsecond == 0:
         name_format = "{}%Y%m%d_%H%M%S".format(get_prefix(src_path))
     else:
         millis = int(exif_date_time.microsecond/1000)
@@ -95,7 +95,7 @@ def get_dst_path(src_path, dst_path_list):
     dup_count = 0
     name_str = name_str_prefix
     while path.exists(path.join(root, name_str+ext)) or path.join(root, name_str+ext) in dst_path_list:
-        name_str = '{}_{}'.format(name_str_prefix, dup_count)
+        name_str = '{}_{}'.format(name_str_prefix, DUP_SUFFIX[dup_count])
         new_dst_path = path.join(root, name_str+ext)
         logger.debug('Duplicate name ,try next {}'.format(new_dst_path))
         dup_count += 1

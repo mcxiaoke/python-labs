@@ -95,6 +95,8 @@ def get_date_tag(filename):
     except Exception as e:
         # print('Error: No Exif {}'.format(os.path.basename(filename)))
         return
+    st_name = "MakerNotes:ShutterCount"
+    st_value = tags.get(st_name)
     try:
         if not tags:
             return

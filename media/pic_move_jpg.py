@@ -25,7 +25,8 @@ def move_all_jpeg(src_dir):
                 jpg_dir_name = os.path.basename(root)
                 jpg_dir_root_new = root.replace('RAW', 'JPEG')
                 tasks.append((jpg_raw_dir, jpg_dir_root_new))
-                print('Prepare:{}'.format(jpg_raw_dir))
+                print('SRC: {}'.format(jpg_raw_dir))
+                print('DST: {}'.format(jpg_dir_root_new))
                 ###
                 # jpg_dir_root_new = jpg_dir_root_new.replace(jpg_dir_name, '')
                 # print('Rename: {}'.format(jpg_raw_dir_new))

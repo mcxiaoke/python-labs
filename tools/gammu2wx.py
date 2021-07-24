@@ -6,20 +6,33 @@ from typing import Mapping
 import requests
 import os
 import sys
-from config import WX_REPORT_URL
+from config import WX_REPORT_URL, TG_REPORT_URL
 
 
 def send_mqtt(content):
     pass
 
 
+def send_telegram(content):
+    data = {'text': content}
+    proxies = {
+        'http': 'http://127.0.0.1:2081',
+        'https': 'http://127.0.0.1:2081',
+    }
+    try:
+        r = requests.post(TG_REPORT_URL, data=data, proxies=proxies)
+        print('send tg ok:', r.status_code, r.text)
+    except Exception as e:
+        print('send tg failed: {}'.format(e))
+
+
 def send_message(title, desp):
     data = {'title': title, "desp": desp}
     try:
         r = requests.get(WX_REPORT_URL, data=data)
-        print('send ok:', r.status_code, r.text)
+        print('send wx ok:', r.status_code, r.text)
     except Exception as e:
-        print('send failed: {}'.format(e))
+        print('send wx failed: {}'.format(e))
 
 
 def gammu_forward():
@@ -49,12 +62,14 @@ def gammu_forward():
                     text = text + os.environ[envName]
     except Exception as e:
         print("forward {} sms error {}", sender, e)
-    title = "来自{}的短信".format(sender)
+    title = "来自 {} 的短信".format(sender)
     desp = "\n{} ({})".format(text, now)
     # desp = "\n内容：{}\n来自：{}\n时间：{}".format(text, sender, now)
     print('forward sms for [{}]'.format(sender))
     send_message(title, desp)
+    send_telegram("{}\n{}".format(title, desp))
 
 
 if __name__ == '__main__':
     gammu_forward()
+    # send_telegram(sys.argv[1])

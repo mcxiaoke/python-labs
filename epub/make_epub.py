@@ -163,12 +163,15 @@ def grouper(iterable, n, padvalue=None):
     return list(zip_longest(*[iter(iterable)] * n, fillvalue=padvalue))
 
 
-def create_volumes_by_size(all_files, output, title_prefix, max_size=DEFAULT_BOOK_SIZE):
+def create_epub_multi(all_files, output, title_prefix, max_count=0, max_size=0):
     total_count = len(all_files)
-    if total_count > MAX_CH_COUNT * 2:
-        files_chunks = grouper(all_files, MAX_CH_COUNT)
+    chunk_by_count = max_count > 0
+    if chunk_by_count:
+        chunk_count = max_count or MAX_CH_COUNT
+        files_chunks = grouper(all_files, min(chunk_count, MAX_CH_COUNT))
     else:
-        files_chunks = slice_by_size(all_files, max_size)
+        chunk_size = max_size * SIZE_M or DEFAULT_BOOK_SIZE
+        files_chunks = slice_by_size(all_files, min(chunk_size, DEFAULT_BOOK_SIZE))
     page_no = 1
     ps = []
     for i in range(0, len(files_chunks)):
@@ -183,7 +186,7 @@ def create_volumes_by_size(all_files, output, title_prefix, max_size=DEFAULT_BOO
         p.join()
 
 
-def create_epub(src, output, title, max_size=DEFAULT_BOOK_SIZE):
+def create_epub(src, output, title, max_count=0, max_size=0):
     if not os.path.isdir(src):
         raise IOError('src "%s" not exists' % src)
     if not title:
@@ -202,8 +205,9 @@ def create_epub(src, output, title, max_size=DEFAULT_BOOK_SIZE):
         return n.lower().endswith(".txt") or n.lower().endswith(".html")
 
     files = [os.path.join(src, n) for n in os.listdir(src) if is_html_or_text(n)]
-    if files_size(files) > max_size * SIZE_M:
-        create_volumes_by_size(files, output, title, max_size)
+    multi_mode = max_count > 0 or max_size > 0
+    if multi_mode:
+        create_epub_multi(files, output, title, max_count, max_size)
     else:
         p = create_epub_single(files, output, title)
         if p:
@@ -221,10 +225,17 @@ def parse_args():
     parser.add_argument("-o", "--output", help="Output directory")
     parser.add_argument("-t", "--title", help="ePub book title")
     parser.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=0,
+        help="Max chapter count per book",
+    )
+    parser.add_argument(
         "-s",
         "--size",
         type=int,
-        default=DEFAULT_BOOK_SIZE,
+        default=0,
         help="Max size per book (in MB)",
     )
     # parser.add_argument('-m', '--mode', choices=('count', 'size'), default='size')
@@ -240,8 +251,9 @@ def main():
     src = upath.abspath(args.get("input"))
     dst = args.get("output")
     title = args.get("title")
-    max_size = args.get("size")
-    create_epub(src, dst, title, max_size)
+    max_count = args.get("count") or 0
+    max_size = args.get("size") or 0
+    create_epub(src, dst, title, max_count, max_size)
 
 
 def profile():

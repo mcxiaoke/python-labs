@@ -27,6 +27,8 @@ output*/
 temp/
 tmp/
 test/
+venv/
+env/
 
 .idea/
 .ropeproject/

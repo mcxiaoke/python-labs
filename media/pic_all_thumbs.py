@@ -136,7 +136,7 @@ def make_thumbs(src_dir):
                 dst_path = path.join(dst_root, root)
             dst_file = path.join(dst_path, get_thumb_filename(src_path))
             if path.exists(dst_file):
-                # print("Skip: {}".format(dst_file))
+                print("Skip: {}".format(dst_file))
                 continue
             index = index + 1
             images.append((src_path, dst_path, index))

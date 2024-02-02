@@ -26,6 +26,8 @@ def normalize_filename(s):
     s = re.sub(RE_PREFIX_ASCII, "", s)
     s = re.sub(RE_NON_CHAR, "", s)
     s = zhconv.convert(s, "zh-cn")
+    s = re.compile("^\u4e71\u4f26").sub("", s)
+    s = re.compile("作者|完|全").sub("", s)
     return s.strip()
 
 

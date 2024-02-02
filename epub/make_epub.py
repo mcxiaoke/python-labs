@@ -29,11 +29,12 @@ from lib.utils import read_file, write_file, read_list, now, files_size, humaniz
 
 __version__ = "0.2.0"
 
-MAX_CH_COUNT = 1000
+MAX_CH_COUNT = 3000
 SIZE_M = 1024 * 1024
 DEFAULT_BOOK_SIZE = 60  # in MB
-MAX_BOOK_SIZE = 200  # in MB
+MAX_BOOK_SIZE = 300  # in MB
 CHAPTER_TEMPLATE = "resources/chapter.xhtml"
+BASE = os.path.dirname(__file__)
 
 
 def create_html_from_text(text_file, dst=None):
@@ -89,9 +90,14 @@ def _create_epub_single(files, output, title):
     rights = now()
     publisher = "Epub2024"
     print('Creating epub "%s" include %s chapters' % (title, len(chapters)))
-    cover_file = os.path.join(__file__,"resources/cover.jpg")
+    cover_file = os.path.join(BASE, "resources", "cover.jpg")
     book = pypub.Epub(
-        title,cover=cover_file, creator=creator, language=language, rights=rights, publisher=publisher
+        title,
+        cover=cover_file,
+        creator=creator,
+        language=language,
+        rights=rights,
+        publisher=publisher,
     )
     for ch in chapters:
         # print("Adding chapter %s" % ch[1])

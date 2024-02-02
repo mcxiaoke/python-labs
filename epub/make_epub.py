@@ -24,6 +24,7 @@ from multiprocessing import Process
 from lib import compat
 from lib import commons
 from lib import unipath as upath
+from lib import text
 from lib.utils import read_file, write_file, read_list, now, files_size, humanize_bytes
 
 __version__ = "0.2.0"
@@ -33,13 +34,6 @@ SIZE_M = 1024 * 1024
 DEFAULT_BOOK_SIZE = 60  # in MB
 MAX_BOOK_SIZE = 200  # in MB
 CHAPTER_TEMPLATE = "resources/chapter.xhtml"
-
-
-def normalize_filename(name):
-    # return re.sub("[’!\"#$%&'()*+,-./:;<=>?@，。?★、…【】《》？“”‘’！[\\]^_`{|}~\s]+", "", name)
-    name = re.sub(re.compile("[^\\u4e00-\\u9fa5^a-z^A-Z^0-9]"), "", name)
-    name = re.sub(re.compile("^[0-9A-Za-z]+"), "", name)
-    return name
 
 
 def create_html_from_text(text_file, dst=None):
@@ -64,29 +58,6 @@ def create_html_from_text(text_file, dst=None):
         return html_file, name
 
 
-def read_and_clean(c_file):
-    content = None
-    try:
-        fenc = chardet.detect(open(c_file, "rb").read())
-        # if fenc["encoding"]:
-        #     print(fenc)
-        if fenc["encoding"] and "GB" in fenc["encoding"] and fenc["confidence"] > 0.9:
-            with codecs.open(c_file, mode="r", encoding="gb18030") as f:
-                content = f.read()
-        else:
-            with codecs.open(c_file, mode="r", encoding="utf8", errors="strict") as f:
-                content = f.read()
-    except Exception as e:
-        print("Error on %s %s" % (c_file, e))
-    if content:
-        content = re.sub("\w(\r\n)\w", "", content)
-        # dirname = os.path.dirname(c_file)
-        # filename = os.path.basename(c_file)
-        # with codecs.open(os.path.join(dirname, "ch_" + filename), "w", "utf8") as f:
-        #     f.write(content)
-        return re.sub("[\r\n]+", "\r\n", content)
-
-
 def _create_epub_single(files, output, title):
     import pypub
 
@@ -103,10 +74,10 @@ def _create_epub_single(files, output, title):
             continue
         # print("Parsing file %s" % file)
         c_file = file
-        c_title = normalize_filename(os.path.splitext(name)[0])[:16]
-        c_content = read_and_clean(c_file)
+        c_title = text.normalize_filename(os.path.splitext(name)[0])[:16]
+        c_content = text.read_content(c_file)
         if c_content and len(c_content) > 8192:
-            print("[%s] Adding %s [%02d]" % (title, file, ch_index))
+            print("[%s] Adding %s <%s> [%02d]" % (title, c_title, name, ch_index))
             chapters.append((c_content, c_title))
 
     sort_by_pinyin = lambda x: [
@@ -253,7 +224,18 @@ def main():
     title = args.get("title")
     max_count = args.get("count") or 0
     max_size = args.get("size") or 0
-    create_epub(src, dst, title, max_count, max_size)
+
+    sub_dirs = sorted(os.listdir(src))
+    use_batch_mode = len(sub_dirs) < 20 and all(os.path.isdir(x) for x in sub_dirs)
+    if use_batch_mode:
+        for sub_dir in sub_dirs:
+            sub_title = os.path.basename(sub_dir).removesuffix(text.UTF8_SUFFIX)
+            sub_title = "{}_Book".format(
+                pypinyin.pinyin(sub_title, style=pypinyin.Style.NORMAL)
+            ).upper()
+            create_epub(sub_dir, dst, title, max_count, max_size)
+    else:
+        create_epub(src, dst, title, max_count, max_size)
 
 
 def profile():

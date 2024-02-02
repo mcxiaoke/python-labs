@@ -89,8 +89,9 @@ def _create_epub_single(files, output, title):
     rights = now()
     publisher = "Epub2024"
     print('Creating epub "%s" include %s chapters' % (title, len(chapters)))
+    cover_file = os.path.join(__file__,"resources/cover.jpg")
     book = pypub.Epub(
-        title, creator=creator, language=language, rights=rights, publisher=publisher
+        title,cover=cover_file, creator=creator, language=language, rights=rights, publisher=publisher
     )
     for ch in chapters:
         # print("Adding chapter %s" % ch[1])
@@ -226,14 +227,16 @@ def main():
     max_size = args.get("size") or 0
 
     sub_dirs = sorted(os.listdir(src))
+    sub_dirs = [os.path.join(src, x) for x in sub_dirs]
     use_batch_mode = len(sub_dirs) < 20 and all(os.path.isdir(x) for x in sub_dirs)
     if use_batch_mode:
         for sub_dir in sub_dirs:
-            sub_title = os.path.basename(sub_dir).removesuffix(text.UTF8_SUFFIX)
+            print("Processing {}".format(sub_dir))
+            sub_title = os.path.basename(sub_dir)
             sub_title = "{}_Book".format(
-                pypinyin.pinyin(sub_title, style=pypinyin.Style.NORMAL)
+                pypinyin.pinyin(sub_title, style=pypinyin.Style.FIRST_LETTER)
             ).upper()
-            create_epub(sub_dir, dst, title, max_count, max_size)
+            create_epub(sub_dir, dst, sub_title, max_count, max_size)
     else:
         create_epub(src, dst, title, max_count, max_size)
 

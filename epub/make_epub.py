@@ -19,6 +19,7 @@ import textwrap
 import chardet
 import pypinyin
 import pypub
+from datetime import datetime
 from itertools import zip_longest
 from multiprocessing import Process
 from lib import compat
@@ -26,8 +27,9 @@ from lib import commons
 from lib import unipath as upath
 from lib import text
 from lib.utils import read_file, write_file, read_list, now, files_size, humanize_bytes
+from lib.image import create_cover
 
-__version__ = "0.2.0"
+__version__ = "1.0.1"
 
 MAX_CH_COUNT = 3000
 SIZE_M = 1024 * 1024
@@ -60,8 +62,6 @@ def create_html_from_text(text_file, dst=None):
 
 
 def _create_epub_single(files, output, title):
-    import pypub
-
     chapters = []
     # https://docs.python.org/3/library/codecs.html
     ch_index = 0
@@ -84,13 +84,17 @@ def _create_epub_single(files, output, title):
     sort_by_pinyin = lambda x: [
         pypinyin.pinyin(i, style=pypinyin.Style.TONE3) for i in x[1]
     ]
+    date_str = datetime.now().strftime("%Y.%m.%d")
     chapters = sorted(chapters, key=sort_by_pinyin)
     creator = "Epub2024"
+    info = date_str
     language = "cn"
     rights = now()
     publisher = "Epub2024"
     print('Creating epub "%s" include %s chapters' % (title, len(chapters)))
-    cover_file = os.path.join(BASE, "resources", "cover.jpg")
+    base_cover_file = os.path.join(BASE, "cover", "cover_04.jpg")
+    tmp_cover_file = os.path.join(BASE, "tmp", title, "cover.jpg")
+    cover_file = create_cover(base_cover_file, title, info, tmp_cover_file)
     book = pypub.Epub(
         title,
         cover=cover_file,
@@ -167,6 +171,8 @@ def create_epub_multi(all_files, output, title_prefix, max_count=0, max_size=0):
 def create_epub(src, output, title, max_count=0, max_size=0):
     if not os.path.isdir(src):
         raise IOError('src "%s" not exists' % src)
+    if not title:
+        title = os.path.basename(src)
     if not title:
         raise ValueError("title must not be empty")
     if max_size > MAX_BOOK_SIZE:
